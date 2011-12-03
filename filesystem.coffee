@@ -161,12 +161,15 @@ if not window.requestFileSystem
 		# FileCallback, optional ErrorCallback
 		file: (successCallback, errorCallback) ->
 			setTimeout '' , 0
+		
 
 	class fs.DirectoryEntry
 		constructor: (parent, path) ->
 			super parent, path
 			Object.defineProperty this, "isDirectory", {value : true,
 			writable : false}
+		
+		children: new Object
 		
 		createReader: () ->
 			return new DirectoryReader this
