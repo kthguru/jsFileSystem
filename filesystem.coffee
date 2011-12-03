@@ -104,11 +104,20 @@ if not window.requestFileSystem
 			new DatabaseRequest @objectStore.delete pathToKey path
 
 	class fs.Entry
-		constructor: (filesystem, fullPath) ->
+		constructor: (parent, fullPath) ->
+			Object.defineProperty this, "parent", {value : parent,
+			writable : false}
+			
+			filesystem = parent.filesystem
+			
+			Object.defineProperty this, "filesystem", {value : filesystem,
+			writable : false}
+			
 			Object.defineProperty this, "fullPath", {value : fullPath,
 			writable : false}
 			
-			Object.defineProperty this, "name", {value : extractName @fullPath,
+			name = extractName @fullPath
+			Object.defineProperty this, "name", {value : name,
 			writable : false}
 			
 			Object.defineProperty this, "isFile", {value : false,
@@ -154,14 +163,13 @@ if not window.requestFileSystem
 			setTimeout '' , 0
 
 	class fs.DirectoryEntry
-		constructor: (path) ->
-			super
-			@path = path
+		constructor: (parent, path) ->
+			super parent, path
 			Object.defineProperty this, "isDirectory", {value : true,
 			writable : false}
 		
 		createReader: () ->
-			return new DirectoryReader
+			return new DirectoryReader this
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getFile: (path, options, successCallback, errorCallback) ->
@@ -175,6 +183,21 @@ if not window.requestFileSystem
 		
 		# VoidCallback, optional ErrorCallback
 		removeRecursively: (successCallback, errorCallback) ->
+			func = {
+				handleEvent: (entry) ->
+					removedEntry = entry.children.remove this.name
+					successCallback.handleEvent removedEntry
+			}
+				
+			getParent func, errorCallback
+	
+	class fs.RootDirectoryEntry
+		constructor: (filesystem, path) ->
+			fake_parent = {
+				parent:     this
+				filesystem: filesystem
+			}
+			super fake_parent, path
 	
 	class fs.DirectoryReader
 		constructor: (dirEntry) ->
@@ -187,12 +210,22 @@ if not window.requestFileSystem
 			successCallback.handleEvent []
 
 	class fs.FileSystem
-		name: "whatever";
-		root: new DirectoryEntry("/");
+		constructor: () ->
+			Object.defineProperty this, "name", {value : "whatever",
+			writable : false}
+			
+			rootEntry = new RootDirectoryEntry this, "/"
+			
+			Object.defineProperty this, "root", {value : rootEntry,
+			writable : false}
 
 	class fs.LocalFileSystem
-		TEMPORARY:  0
-		PERSISTENT: 1
+		constructor: () ->
+			Object.defineProperty this, "TEMPORARY", {value : 0,
+			writable : false}
+			
+			Object.defineProperty this, "PERSISTENT", {value : 1,
+			writable : false}
 		
 		setDataStorage: (dataStorage, successCallback) ->
 			filesystem: new fs.FileSystem dataStorage
