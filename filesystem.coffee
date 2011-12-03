@@ -256,9 +256,8 @@ if not window.requestFileSystem
 			Object.defineProperty this, "PERSISTENT", {value : 1,
 			writable : false}
 		
-		setDataStorage: (dataStorage, successCallback) ->
+		createFilesystem: (dataStorage) ->
 			filesystem: new fs.FileSystem dataStorage
-			setTimeout successCallback.handleEvent filesystem, 0
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		requestFileSystem: (type, size, successCallback, errorCallback) ->
@@ -276,14 +275,19 @@ if not window.requestFileSystem
 				request.onsuccess = ->
 					database = request.result
 					object_store = database.createObjectStore "FileSystem"
-					setDataStorage new DatabaseDataStorage object_storage, successCallback
+					createFilesystem new DatabaseDataStorage object_storage
+					successCallback.handleEvent @filesystem
+					
 				
 				request.onerror = ->
 					error = new FileError FileError.ABORT_ERR ""
 					errorCallback.handleEvent error
 				
 			else if window.localStorage
-				setDataStorage new LocalDataStorage window.localStorage, successCallback
+				createFilesystem new LocalDataStorage window.localStorage
+				func ->
+					successCallback.handleEvent @filesystem
+				setTimeout func, 0
 			else
 				func = ->
 					error = new FileError FileError.ABORT_ERR "IndexedDB and localStorage are not supported."
