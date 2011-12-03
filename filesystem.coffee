@@ -200,7 +200,7 @@ if not window.requestFileSystem
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		requestFileSystem: (type, size, successCallback, errorCallback) ->
-			if type is not PERSISTENT
+			if type is not @PERSISTENT
 				# Not supported
 				if errorCallback 
 					func = ->
