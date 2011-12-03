@@ -183,6 +183,32 @@ if not window.requestFileSystem
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getDirectory: (path, options, successCallback, errorCallback) ->
+			entry = findPath pathList
+			
+			if entry 
+				if options.create and options.exclusive
+					func = ->
+						error = new FileError FileError.ABORT_ERR "File already exists."
+						errorCallback.handleEvent error
+					setTimeout func, 0
+					return
+				else if not options.create and entry.isFile
+					func = ->
+						error = new FileError FileError.ABORT_ERR "Not a Directory but a File."
+						errorCallback.handleEvent error
+					setTimeout func, 0
+					return
+			else
+				if options.create
+					new DirectoryEntry
+				else
+					func = ->
+						error = new FileError FileError.ABORT_ERR "Directory does not exist."
+						errorCallback.handleEvent error
+					setTimeout func, 0
+					return
+			
+			return entry
 		
 		# VoidCallback, optional ErrorCallback
 		removeRecursively: (successCallback, errorCallback) ->
