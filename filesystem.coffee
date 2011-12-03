@@ -105,14 +105,17 @@ if not window.requestFileSystem
 
 	class fs.Entry
 		constructor: (filesystem, fullPath) ->
-			@fullPath = fullPath
-		fullPath: @fullPath
-		
-		name: extractName @fullPath
-		filesystem: undefined
-		
-		isFile:      undefined
-		isDirectory: undefined
+			Object.defineProperty this, "fullPath", {value : fullPath,
+			writable : false}
+			
+			Object.defineProperty this, "name", {value : extractName @fullPath,
+			writable : false}
+			
+			Object.defineProperty this, "isFile", {value : false,
+			writable : false}
+			
+			Object.defineProperty this, "isDirectory", {value : false,
+			writable : false}
 		
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
@@ -131,13 +134,15 @@ if not window.requestFileSystem
 		# EntryCallback, optional ErrorCallback
 		getParent: (successCallback, errorCallback) ->
 
-	class fs.DirectoryReader
-
 	class fs.File
 	
 	class fs.FileWriter
 
 	class fs.FileEntry
+		constructor: () ->
+			super
+			Object.defineProperty this, "isFile", {value : true,
+			writable : false}
 		
 		# FileWriterCallback, optional ErrorCallback
 		createWriter: (successCallback, errorCallback) ->
@@ -150,7 +155,10 @@ if not window.requestFileSystem
 
 	class fs.DirectoryEntry
 		constructor: (path) ->
+			super
 			@path = path
+			Object.defineProperty this, "isDirectory", {value : true,
+			writable : false}
 		
 		createReader: () ->
 			return new DirectoryReader
@@ -167,6 +175,11 @@ if not window.requestFileSystem
 		
 		# VoidCallback, optional ErrorCallback
 		removeRecursively: (successCallback, errorCallback) ->
+	
+	class fs.DirectoryReader
+		constructor: (dirEntry) ->
+			Object.defineProperty this, "dirEntry", {value : dirEntry,
+			writable : false}
 
 	class fs.FileSystem
 		name: "whatever";
