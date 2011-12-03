@@ -180,6 +180,11 @@ if not window.requestFileSystem
 		constructor: (dirEntry) ->
 			Object.defineProperty this, "dirEntry", {value : dirEntry,
 			writable : false}
+		
+		# EntriesCallback, optional ErrorCallback 
+		readEntries: (successCallback, errorCallback) ->
+			successCallback.handleEvent @dirEntry.children
+			successCallback.handleEvent []
 
 	class fs.FileSystem
 		name: "whatever";
