@@ -176,21 +176,39 @@ if not window.requestFileSystem
 		TEMPORARY:  0
 		PERSISTENT: 1
 		
+		setDataStorage: (dataStorage, successCallback) ->
+			filesystem: new fs.FileSystem dataStorage
+			setTimeout successCallback.handleEvent filesystem, 0
+		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		requestFileSystem: (type, size, successCallback, errorCallback) ->
 			if type is not PERSISTENT
 				# Not supported
 				if errorCallback 
-					setTimeout errorCallback.handleEvent, 0
-				return;
+					func = ->
+						error = new FileError FileError.ABORT_ERR "Only PERSISTENT type is supported."
+						errorCallback.handleEvent error
+					
+					setTimeout func, 0
+			
 			else if window.indexedDB
+				request = window.indexedDB.open "___jsLocalFileSystem___"
+				request.onsuccess = ->
+					database = request.result
+					object_store = database.createObjectStore "FileSystem"
+					setDataStorage new DatabaseDataStorage object_storage, successCallback
+				
+				request.onerror = ->
+					error = new FileError FileError.ABORT_ERR ""
+					errorCallback.handleEvent error
+				
 			else if window.localStorage
+				setDataStorage new LocalDataStorage window.localStorage, successCallback
 			else
-				setTimeout errorCallback.handleEvent, 0
-			
-			filesystem: new fs.FileSystem();
-			
-			setTimeout successCallback.handleEvent filesystem, 0
+				func = ->
+					error = new FileError FileError.ABORT_ERR "IndexedDB and localStorage are not supported."
+					errorCallback.handleEvent error
+				setTimeout func, 0
 
 	fsEmul = new fs.LocalFileSystem
 	window.requestFileSystem = fsEmul.requestFileSystem;
