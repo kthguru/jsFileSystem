@@ -1,6 +1,8 @@
 # Hook up FileSystem API
 
-window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem
+if not window.BlobBuilder
+	window.BlobBuilder = window.WebKitBlobBuilder || window.MozBlobBuilder
 
 if not window.requestFileSystem
 	# No native support
@@ -14,10 +16,10 @@ if not window.requestFileSystem
 			currentPart = parts[i]
 			parent[currentPart] = parent[currentPart] || {}
 			parent = parent[currentPart]
-
+		
 		return parent
-
-	class fs.FileError
+	
+	class fs.FileException
 		constructor: (code, msg) ->
 			@code = code
 			@msg = msg
@@ -30,16 +32,21 @@ if not window.requestFileSystem
 		NO_MODIFICATION_ALLOWED_ERR: 6
 		INVALID_STATE_ERR:           7
 		SYNTAX_ERR:                  8
-		INVALID_MODIFICATION_ERR:    9
 		QUOTA_EXCEEDED_ERR:         10
-		TYPE_MISMATCH_ERR:          11
-		PATH_EXISTS_ERR:            12
 		
 		toString: () ->
 			@msg
-
+	
+	class fs.FileError extends fs.FileException
+		constructor: (code, msg) ->
+			super code, msg
+		
+		INVALID_MODIFICATION_ERR:    9
+		TYPE_MISMATCH_ERR:          11
+		PATH_EXISTS_ERR:            12
+	
 	class fs.Request
-
+	
 	class fs.DataStorage
 		#DSRequestEmul
 		put
@@ -102,6 +109,11 @@ if not window.requestFileSystem
 
 		remove: (path) ->
 			new DatabaseRequest @objectStore.delete pathToKey path
+	
+	class js.Metadata
+		constructor: () ->
+			Object.defineProperty this, "modificationTime", {value : undefined,
+			writable : false}
 
 	class fs.Entry
 		constructor: (parent, fullPath) ->
@@ -125,9 +137,19 @@ if not window.requestFileSystem
 			
 			Object.defineProperty this, "isDirectory", {value : false,
 			writable : false}
-		
+			
+			@metadata = null
+			@lastFileModificationDate = undefined
+			
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
+			func ->
+				if not @metadata
+					@metadata = {
+						modificationTime: @lastFileModificationDate
+					}
+				successCallback.handleEvent @metadata
+			setTimeout func, 0
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
 		moveTo: (parent, newName, successCallback, errorCallback) ->
@@ -139,13 +161,177 @@ if not window.requestFileSystem
 		
 		# VoidCallback, optional ErrorCallback
 		remove: (successCallback, errorCallback) ->
+			func = {
+				handleEvent: (entry) ->
+					removedEntry = delete entry.children[@name]
+					successCallback.handleEvent removedEntry
+			}
+				
+			getParent func, errorCallback
 		
 		# EntryCallback, optional ErrorCallback
 		getParent: (successCallback, errorCallback) ->
-
-	class fs.File
+			@parent
+	class fs.Blob
+		data: []
+		
+	class fs.File extends fs.Blob
+		constructor: (name) ->
+			Object.defineProperty this, "name", {value : name,
+			writable : false}
+		
+		_lastModifiedDate:
+		
+		get lastModifiedDate: () ->
+			@_lastModifiedDate
 	
-	class fs.FileWriter
+	class fs.FileSaver
+		registerFunctions: (fileReader) ->
+			fileReader.onabort = (event) ->
+				if @onabort
+					@onabort event
+			
+			fileReader.onloadstart = (event) ->
+				if @onwritestart
+					@onwritestart event
+			
+			fileReader.onprogress = (event) ->
+				if @onprogress
+					@onprogress event
+			
+			fileReader.onload = (event) ->
+				@onload event
+				if @onwrite
+					@onwrite event
+			
+			fileReader.onabort = (event) ->
+				if @onabort
+					@onabort event
+			
+			fileReader.onerror = (event) ->
+				if @onerror
+					@onerror event
+			
+			fileReader.onloadend = (event) ->
+				if @onwriteend
+					@onwriteend event
+		
+		constructor: () ->
+			Object.defineProperty this, "INIT", {value : 0,
+			writable : false}
+			
+			Object.defineProperty this, "WRITING", {value : 1,
+			writable : false}
+			
+			Object.defineProperty this, "DONE", {value : 2,
+			writable : false}
+			@reader = new FileReader
+			registerFunctions @reader
+		
+		_readyState: @INIT
+		_error:      null
+		
+		abort: () ->
+			@reader.abort
+		
+		get readyState: () ->
+			@_readyState
+		
+		#FileError
+		get error: () ->
+			@_error
+		
+		onwritestart: (event) ->
+		onprogress:   (event) ->
+		onwrite:      (event) ->
+		onabort:      (event) ->
+		onerror:      (event) ->
+		onwriteend:   (event) ->
+	
+	class fs.FileWriter extends fs.FileSaver
+		constructor: () ->
+			
+			Object.defineProperty this, "length", {value : undefined,
+			writable : false}
+			
+			
+		_data: null
+		_position: -1
+		
+		add: (arraybuffer) ->
+			if _data is null
+				@_data = arraybuffer
+			else
+				oldData = @_data;
+				@_data = new Uint8ArrayBuffer oldData.byteLength + arraybuffer.byteLength
+				
+				# Copy old data
+				@_data.set oldData
+				@_data.set arraybuffer, @position
+		
+		get position: () ->
+			@_position
+		
+		get length: () ->
+			@_length
+		
+		onload: (event) ->
+			add @reader.result
+		
+		onabort: () ->
+			
+		
+		onerror: () ->
+			
+		
+		#Blob 
+		write: (data) -> #raises (FileException)
+			@reader.readAsArrayBuffer data
+		
+		seek: (offset) -> #raises (FileException)
+			if @readyState is WRITING
+				throw new FileException INVALID_STATE_ERR
+			
+			# Limit to file index
+			offset = offset % @length
+			offset = Math.max offset, @length - 1
+			
+			# Negative is from other end
+			if offset < 0
+				offset += @length
+			
+			@_position = offset
+		
+		truncate: (size) -> #raises (FileException)
+			if @readyState is WRITING
+				throw new FileException INVALID_STATE_ERR
+			
+			@readyState = WRITING
+			
+			#If an error occurs during truncate,
+			 proceed to the error steps below.
+Set the error attribute; on getting the error attribute must be a FileError object with a valid error code that indicates the kind of file error that has occurred.
+			@readyState = DONE
+			#Dispatch a progress event called error.
+			#Dispatch a progress event called writeend
+On getting, the length and position attributes should indicate any modification to the file.
+Terminate this overall set of steps.
+
+			#Dispatch a progress event called writestart.
+Return from the truncate method, but continue processing the other steps in this algorithm.
+			
+Upon successful completion:
+length must be equal to size.
+position must be the lesser of
+its pre-truncate value,
+size.
+			@readyState = DONE.
+Dispatch a progress event called write
+Dispatch a progress event called writeend
+Terminate this overall set of steps.
+
+			@reader.result.slice 0, size - 1
+			@_length = size
 
 	class fs.FileEntry
 		constructor: () ->
@@ -212,14 +398,8 @@ if not window.requestFileSystem
 		
 		# VoidCallback, optional ErrorCallback
 		removeRecursively: (successCallback, errorCallback) ->
-			func = {
-				handleEvent: (entry) ->
-					removedEntry = entry.children.remove this.name
-					successCallback.handleEvent removedEntry
-			}
-				
-			getParent func, errorCallback
-	
+			remove successCallback, errorCallback
+			
 	class fs.RootDirectoryEntry
 		constructor: (filesystem, path) ->
 			fake_parent = {
@@ -277,7 +457,6 @@ if not window.requestFileSystem
 					object_store = database.createObjectStore "FileSystem"
 					createFilesystem new DatabaseDataStorage object_storage
 					successCallback.handleEvent @filesystem
-					
 				
 				request.onerror = ->
 					error = new FileError FileError.ABORT_ERR ""
