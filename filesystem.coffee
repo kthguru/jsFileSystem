@@ -292,13 +292,11 @@ if not window.requestFileSystem
 			if @readyState is WRITING
 				throw new FileException INVALID_STATE_ERR
 			
-			# Limit to file index
-			offset = offset % @length
-			offset = Math.max offset, @length - 1
-			
-			# Negative is from other end
-			if offset < 0
-				offset += @length
+			if offset > @length
+				offset = @length
+			else if offset < 0 # Limit to file index
+				offset += @length # Negative is from other end
+				offset = Math.min offset, 0
 			
 			@_position = offset
 		
