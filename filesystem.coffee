@@ -180,7 +180,7 @@ if not window.requestFileSystem
 			Object.defineProperty this, "name", {value : name,
 			writable : false}
 		
-		_lastModifiedDate:
+		@_lastModifiedDate: null
 		
 		get lastModifiedDate: () ->
 			@_lastModifiedDate
@@ -216,20 +216,66 @@ if not window.requestFileSystem
 				if @onwriteend
 					@onwriteend event
 		
+		get WRITE_START: 'FileSaverWriteStart'
+		get PROGRESS   : 'FileSaverProgress'
+		get WRITE      : 'FileSaverWrite'
+		get ABORT      : 'FileSaverAbort'
+		get ERROR      : 'FileSaverError'
+		get WRITE_END  : 'FileSaverWriteEnd'
+		
+		dispatch: (eventName) ->
+			# If your browser does not support CustomEvent I don't like you!
+			event = document.createEvent 'CustomEvent'
+			event.initCustomEvent eventName, true, true, null
+			document.dispatchEvent event
+		
+		get INIT    : 0
+		get WRITING : 1
+		get DONE    : 2
+		
 		constructor: () ->
-			Object.defineProperty this, "INIT", {value : 0,
-			writable : false}
-			
-			Object.defineProperty this, "WRITING", {value : 1,
-			writable : false}
-			
-			Object.defineProperty this, "DONE", {value : 2,
-			writable : false}
 			@reader = new FileReader
 			registerFunctions @reader
+			
+			fnct = () ->
+				if @onwritestart
+					@onwritestart
+			document.addEventListener WRITE_START, fnct, false
+			
+			fnct = () ->
+				if @onprogress
+					@onprogress
+			document.addEventListener PROGRESS   , fnct, false
+			
+			fnct = () ->
+				if @onwrite
+					@onwrite
+			document.addEventListener WRITE      , fnct, false
+			
+			fnct = () ->
+				if @onabort
+					@onabort
+			document.addEventListener ABORT      , fnct, false
+			
+			fnct = () ->
+				if @onerror
+					@onerror
+			document.addEventListener ERROR      , fnct, false
+			
+			fnct = () ->
+				if @onwriteend
+					@onwriteend
+			document.addEventListener WRITE_END  , fnct, false
+			
+			set @error = (error) ->
+				#only enable error setting here
+				@_error = error
+			
+			set @readyState = (state) ->
+				@_readyState = state
 		
-		_readyState: @INIT
-		_error:      null
+		@_readyState: INIT
+		@_error:      null
 		
 		abort: () ->
 			@reader.abort
@@ -241,33 +287,55 @@ if not window.requestFileSystem
 		get error: () ->
 			@_error
 		
-		onwritestart: (event) ->
-		onprogress:   (event) ->
-		onwrite:      (event) ->
-		onabort:      (event) ->
-		onerror:      (event) ->
-		onwriteend:   (event) ->
+		@onwritestart: null
+		@onprogress:   null
+		@onwrite:      null
+		@onabort:      null
+		@onerror:      null
+		@onwriteend:   null
 	
 	class fs.FileWriter extends fs.FileSaver
-		constructor: () ->
-			
-			Object.defineProperty this, "length", {value : undefined,
-			writable : false}
-			
-			
-		_data: null
-		_position: -1
 		
-		add: (arraybuffer) ->
-			if _data is null
-				@_data = arraybuffer
-			else
-				oldData = @_data;
-				@_data = new Uint8ArrayBuffer oldData.byteLength + arraybuffer.byteLength
+		DO_WRITE: 'FileWriterDoWrite'
+		@_data: null
+		
+		constructor: () ->
+			super
+			
+			set @length: (length) ->
+				@_length = length
+			
+			fnct = () ->
+				if size is not @length
+					# Needs to do something
+					if size < @length
+						@_data = @_data.subarray 0, size
+					else
+						@_data = new Uint8Array @_data, 0, size
+					
+					@length = size
 				
-				# Copy old data
-				@_data.set oldData
-				@_data.set arraybuffer, @position
+				@readyState = DONE
+				dispatch WRITE
+				dispatch WRITE_END
+			document.addEventListener DO_WRITE, fnct, false
+			
+			add = (arraybuffer) ->
+				if @_data
+					oldData = @_data;
+					@_data = new Uint8Array oldData.byteLength + arraybuffer.byteLength
+				
+					# Copy old data
+					@_data.set oldData
+					@_data.set arraybuffer, @position
+				else
+					@_data = arraybuffer
+			
+		@_position: -1
+		@_length: 0
+		
+		get @length: () ->
+			@_length
 		
 		get position: () ->
 			@_position
@@ -275,18 +343,19 @@ if not window.requestFileSystem
 		get length: () ->
 			@_length
 		
-		onload: (event) ->
-			add @reader.result
-		
-		onabort: () ->
-			
-		
-		onerror: () ->
-			
-		
 		#Blob 
 		write: (data) -> #raises (FileException)
+			@reader.onload = () ->
+				add @reader.result
+				
 			@reader.readAsArrayBuffer data
+		
+		createError: (fileError) ->
+			@error = fileError
+			@readyState = DONE
+			
+			dispatch ERROR
+			dispatch WRITE_END
 		
 		seek: (offset) -> #raises (FileException)
 			if @readyState is WRITING
@@ -301,35 +370,19 @@ if not window.requestFileSystem
 			@_position = offset
 		
 		truncate: (size) -> #raises (FileException)
+			
+			# Since in the spec there is no shortcut for length == size
+			# we won't implement one
+			#if size is @_data.length
+				
 			if @readyState is WRITING
 				throw new FileException INVALID_STATE_ERR
 			
-			@readyState = WRITING
+			@_readyState = WRITING
 			
-			#If an error occurs during truncate,
-			 proceed to the error steps below.
-Set the error attribute; on getting the error attribute must be a FileError object with a valid error code that indicates the kind of file error that has occurred.
-			@readyState = DONE
-			#Dispatch a progress event called error.
-			#Dispatch a progress event called writeend
-On getting, the length and position attributes should indicate any modification to the file.
-Terminate this overall set of steps.
-
-			#Dispatch a progress event called writestart.
-Return from the truncate method, but continue processing the other steps in this algorithm.
+			dispatch WRITE_START
 			
-Upon successful completion:
-length must be equal to size.
-position must be the lesser of
-its pre-truncate value,
-size.
-			@readyState = DONE.
-Dispatch a progress event called write
-Dispatch a progress event called writeend
-Terminate this overall set of steps.
-
-			@reader.result.slice 0, size - 1
-			@_length = size
+			dispatch DO_WRITE
 
 	class fs.FileEntry
 		constructor: () ->
@@ -421,10 +474,10 @@ Terminate this overall set of steps.
 			Object.defineProperty this, "name", {value : "whatever",
 			writable : false}
 			
-			rootEntry = new RootDirectoryEntry this, "/"
+			@rootEntry = new RootDirectoryEntry this, "/"
 			
-			Object.defineProperty this, "root", {value : rootEntry,
-			writable : false}
+		get root: () ->
+			@rootEntry
 
 	class fs.LocalFileSystem
 		constructor: () ->
