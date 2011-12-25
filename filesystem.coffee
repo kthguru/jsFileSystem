@@ -183,7 +183,7 @@ if not window.requestFileSystem
 		
 		@_lastModifiedDate: null
 		
-		get lastModifiedDate: () ->
+		@getterlastModifiedDate: () ->
 			@_lastModifiedDate
 	
 	class fs.FileSaver
@@ -217,12 +217,12 @@ if not window.requestFileSystem
 				if @onwriteend
 					@onwriteend event
 		
-		get WRITE_START: 'FileSaverWriteStart'
-		get PROGRESS   : 'FileSaverProgress'
-		get WRITE      : 'FileSaverWrite'
-		get ABORT      : 'FileSaverAbort'
-		get ERROR      : 'FileSaverError'
-		get WRITE_END  : 'FileSaverWriteEnd'
+		getterWRITE_START: -> 'FileSaverWriteStart'
+		getterPROGRESS   : -> 'FileSaverProgress'
+		getterWRITE      : -> 'FileSaverWrite'
+		getterABORT      : -> 'FileSaverAbort'
+		getterERROR      : -> 'FileSaverError'
+		getterWRITE_END  : -> 'FileSaverWriteEnd'
 		
 		dispatch: (eventName) ->
 			# If your browser does not support CustomEvent I don't like you!
@@ -230,9 +230,9 @@ if not window.requestFileSystem
 			event.initCustomEvent eventName, true, true, null
 			document.dispatchEvent event
 		
-		get INIT    : 0
-		get WRITING : 1
-		get DONE    : 2
+		getterINIT    : -> 0
+		getterWRITING : -> 1
+		getterDONE    : -> 2
 		
 		constructor: () ->
 			@reader = new FileReader
@@ -281,11 +281,11 @@ if not window.requestFileSystem
 		abort: () ->
 			@reader.abort
 		
-		get readyState: () ->
+		@getterreadyState: () ->
 			@_readyState
 		
 		#FileError
-		get error: () ->
+		@gettererror: () ->
 			@_error
 		
 		@onwritestart: null
@@ -346,13 +346,13 @@ if not window.requestFileSystem
 		@_position: -1
 		@_length: 0
 		
-		get @length: () ->
+		@getterlength: () ->
 			@_length
 		
-		get position: () ->
+		@getterposition: () ->
 			@_position
 		
-		get length: () ->
+		@getterlength: () ->
 			@_length
 		
 		#Blob 
@@ -503,7 +503,7 @@ if not window.requestFileSystem
 			
 			@rootEntry = new RootDirectoryEntry this, "/"
 			
-		get root: () ->
+		getterroot: () ->
 			@rootEntry
 
 	class fs.LocalFileSystem
