@@ -24,15 +24,15 @@ if not window.requestFileSystem
 			@code = code
 			@msg = msg
 		
-		NOT_FOUND_ERR:               1
-		SECURITY_ERR:                2
-		ABORT_ERR:                   3
-		NOT_READABLE_ERR:            4
-		ENCODING_ERR:                5
-		NO_MODIFICATION_ALLOWED_ERR: 6
-		INVALID_STATE_ERR:           7
-		SYNTAX_ERR:                  8
-		QUOTA_EXCEEDED_ERR:         10
+		getterNOT_FOUND_ERR              : ->  1
+		getterSECURITY_ERR               : ->  2
+		getterABORT_ERR                  : ->  3
+		getterNOT_READABLE_ERR           : ->  4
+		getterENCODING_ERR               : ->  5
+		getterNO_MODIFICATION_ALLOWED_ERR: ->  6
+		getterINVALID_STATE_ERR          : ->  7
+		getterSYNTAX_ERR                 : ->  8
+		getterQUOTA_EXCEEDED_ERR         : -> 10
 		
 		toString: () ->
 			@msg
@@ -41,9 +41,9 @@ if not window.requestFileSystem
 		constructor: (code, msg) ->
 			super code, msg
 		
-		INVALID_MODIFICATION_ERR:    9
-		TYPE_MISMATCH_ERR:          11
-		PATH_EXISTS_ERR:            12
+		getterINVALID_MODIFICATION_ERR: ->  9
+		getterTYPE_MISMATCH_ERR       : -> 11
+		getterPATH_EXISTS_ERR         : -> 12
 	
 	class fs.Request
 	
@@ -82,8 +82,8 @@ if not window.requestFileSystem
 		constructor: (dbrequest) ->
 			@dbrequest = dbrequest
 		
-		LOADING: @dbrequest.LOADING
-		DONE:    @dbrequest.DONE
+		getterLOADING: -> @dbrequest.LOADING
+		getterDONE   : -> @dbrequest.DONE
 		readyState: @dbrequest.readyState
 		onsuccess: undefined
 		onerror:   undefined
@@ -297,7 +297,7 @@ if not window.requestFileSystem
 	
 	class fs.FileWriter extends fs.FileSaver
 		
-		DO_WRITE: 'FileWriterDoWrite'
+		getterDO_WRITE: -> 'FileWriterDoWrite'
 		@_data: null
 		
 		set @length = (length) ->
@@ -505,12 +505,9 @@ if not window.requestFileSystem
 
 	class fs.LocalFileSystem
 		constructor: () ->
-			Object.defineProperty this, "TEMPORARY", {value : 0,
-			writable : false}
-			
-			Object.defineProperty this, "PERSISTENT", {value : 1,
-			writable : false}
 		
+		getterTEMPORARY: -> 0
+		getterPERSISTENT: -> 1
 		createFilesystem: (dataStorage) ->
 			filesystem: new fs.FileSystem dataStorage
 		
