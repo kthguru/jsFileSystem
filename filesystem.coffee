@@ -75,7 +75,7 @@ if not window.requestFileSystem
 		
 		@getterreadyState: -> @dbrequest.readyState
 		onsuccess: undefined
-		onerror:   undefined
+		onerror  : undefined
 	
 	class jsDatabaseDataStorage extends jsDataStorage
 		constructor: (objectStore) ->
@@ -504,7 +504,7 @@ if not window.requestFileSystem
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		requestFileSystem: (type, size, successCallback, errorCallback) ->
 			if type is not @PERSISTENT
-				# Not supported
+				# TEMPORARY is not supported
 				if errorCallback 
 					func = ->
 						error = new FileError FileError.ABORT_ERR "Only PERSISTENT type is supported."
