@@ -19,7 +19,7 @@ if not window.requestFileSystem
 		
 		return parent
 	
-	class fs.FileException
+	class jsFileException
 		constructor: (code, msg) ->
 			@code = code
 			@msg = msg
@@ -37,7 +37,7 @@ if not window.requestFileSystem
 		toString: () ->
 			@msg
 	
-	class fs.FileError extends fs.FileException
+	class jsFileError extends jsFileException
 		constructor: (code, msg) ->
 			super code, msg
 		
@@ -45,9 +45,9 @@ if not window.requestFileSystem
 		getterTYPE_MISMATCH_ERR       : -> 11
 		getterPATH_EXISTS_ERR         : -> 12
 	
-	class fs.Request
+	class jsRequest
 	
-	class fs.DataStorage
+	class jsDataStorage
 		#DSRequestEmul
 		put
 		#DSRequestEmul
@@ -55,7 +55,7 @@ if not window.requestFileSystem
 		clear
 		remove
 
-	class fs.LocalDataStorage extends fs.DataStorage
+	class jsLocalDataStorage extends jsDataStorage
 		constructor: (localStorage) ->
 			@storage = localStorage
 			super
@@ -78,7 +78,7 @@ if not window.requestFileSystem
 		remove: (path) ->
 			@storage.removeItem pathToKey path
 	
-	class fs.DatabaseRequest
+	class jsDatabaseRequest
 		constructor: (dbrequest) ->
 			@dbrequest = dbrequest
 		
@@ -88,7 +88,7 @@ if not window.requestFileSystem
 		onsuccess: undefined
 		onerror:   undefined
 	
-	class fs.DatabaseDataStorage extends fs.DataStorage
+	class jsDatabaseDataStorage extends jsDataStorage
 		constructor: (objectStore) ->
 			@objectStore = objectStore
 			super
@@ -115,7 +115,7 @@ if not window.requestFileSystem
 			Object.defineProperty this, "modificationTime", {value : undefined,
 			writable : false}
 
-	class fs.Entry
+	class jsEntry
 		constructor: (parent, fullPath) ->
 			Object.defineProperty this, "parent", {value : parent,
 			writable : false}
@@ -173,10 +173,10 @@ if not window.requestFileSystem
 		getParent: (successCallback, errorCallback) ->
 			@parent
 	
-	class fs.Blob
+	class jsBlob
 		data: []
 		
-	class fs.File extends fs.Blob
+	class jsFile extends jsBlob
 		constructor: (name) ->
 			Object.defineProperty this, "name", {value : name,
 			writable : false}
@@ -186,7 +186,7 @@ if not window.requestFileSystem
 		@getterlastModifiedDate: () ->
 			@_lastModifiedDate
 	
-	class fs.FileSaver
+	class jsFileSaver
 		registerFunctions: (fileReader) ->
 			fileReader.onabort = (event) ->
 				if @onabort
@@ -295,7 +295,7 @@ if not window.requestFileSystem
 		@onerror:      null
 		@onwriteend:   null
 	
-	class fs.FileWriter extends fs.FileSaver
+	class jsFileWriter extends jsFileSaver
 		
 		getterDO_WRITE: -> 'FileWriterDoWrite'
 		@_data: null
@@ -408,7 +408,7 @@ if not window.requestFileSystem
 			
 			dispatch DO_WRITE
 
-	class fs.FileEntry
+	class jsFileEntry
 		constructor: () ->
 			super
 			Object.defineProperty this, "isFile", {value : true,
@@ -424,7 +424,7 @@ if not window.requestFileSystem
 			setTimeout '' , 0
 		
 
-	class fs.DirectoryEntry
+	class jsDirectoryEntry
 		constructor: (parent, path) ->
 			super parent, path
 			Object.defineProperty this, "isDirectory", {value : true,
@@ -475,7 +475,7 @@ if not window.requestFileSystem
 		removeRecursively: (successCallback, errorCallback) ->
 			remove successCallback, errorCallback
 			
-	class fs.RootDirectoryEntry
+	class jsRootDirectoryEntry
 		constructor: (filesystem, path) ->
 			fake_parent = {
 				parent:     this
@@ -483,7 +483,7 @@ if not window.requestFileSystem
 			}
 			super fake_parent, path
 	
-	class fs.DirectoryReader
+	class jsDirectoryReader
 		constructor: (dirEntry) ->
 			Object.defineProperty this, "dirEntry", {value : dirEntry,
 			writable : false}
@@ -493,7 +493,7 @@ if not window.requestFileSystem
 			successCallback.handleEvent @dirEntry.children
 			successCallback.handleEvent []
 
-	class fs.FileSystem
+	class jsFileSystem
 		constructor: () ->
 			Object.defineProperty this, "name", {value : "whatever",
 			writable : false}
@@ -503,13 +503,13 @@ if not window.requestFileSystem
 		getterroot: () ->
 			@rootEntry
 
-	class fs.LocalFileSystem
+	class jsLocalFileSystem
 		constructor: () ->
 		
 		getterTEMPORARY: -> 0
 		getterPERSISTENT: -> 1
 		createFilesystem: (dataStorage) ->
-			filesystem: new fs.FileSystem dataStorage
+			filesystem: new jsFileSystem dataStorage
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		requestFileSystem: (type, size, successCallback, errorCallback) ->
@@ -545,6 +545,5 @@ if not window.requestFileSystem
 					errorCallback.handleEvent error
 				setTimeout func, 0
 
-	fsEmul = new fs.LocalFileSystem
-	window.requestFileSystem = fsEmul.requestFileSystem;
+	window.requestFileSystem = jsLocalFileSystem.requestFileSystem;
 
