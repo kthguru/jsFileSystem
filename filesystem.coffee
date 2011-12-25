@@ -72,7 +72,8 @@ if not window.requestFileSystem
 		
 		getterLOADING: -> @dbrequest.LOADING
 		getterDONE   : -> @dbrequest.DONE
-		readyState: @dbrequest.readyState
+		
+		@getterreadyState: -> @dbrequest.readyState
 		onsuccess: undefined
 		onerror:   undefined
 	
