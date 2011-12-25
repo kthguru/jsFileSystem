@@ -172,6 +172,7 @@ if not window.requestFileSystem
 		# EntryCallback, optional ErrorCallback
 		getParent: (successCallback, errorCallback) ->
 			@parent
+	
 	class fs.Blob
 		data: []
 		
@@ -266,13 +267,13 @@ if not window.requestFileSystem
 				if @onwriteend
 					@onwriteend
 			document.addEventListener WRITE_END  , fnct, false
-			
-			set @error = (error) ->
-				#only enable error setting here
-				@_error = error
-			
-			set @readyState = (state) ->
-				@_readyState = state
+		
+		set @error = (error) ->
+			#only enable error setting here
+			@_error = error
+		
+		set @readyState = (state) ->
+			@_readyState = state
 		
 		@_readyState: INIT
 		@_error:      null
@@ -299,11 +300,11 @@ if not window.requestFileSystem
 		DO_WRITE: 'FileWriterDoWrite'
 		@_data: null
 		
+		set @length = (length) ->
+				@_length = length
+		
 		constructor: () ->
 			super
-			
-			set @length: (length) ->
-				@_length = length
 			
 			fnct = () ->
 				if size is not @length
@@ -320,16 +321,27 @@ if not window.requestFileSystem
 				dispatch WRITE_END
 			document.addEventListener DO_WRITE, fnct, false
 			
-			add = (arraybuffer) ->
-				if @_data
-					oldData = @_data;
-					@_data = new Uint8Array oldData.byteLength + arraybuffer.byteLength
-				
-					# Copy old data
-					@_data.set oldData
-					@_data.set arraybuffer, @position
-				else
-					@_data = arraybuffer
+		add = (arraybuffer) ->
+			if @_data
+				oldData = @_data;
+				@length = oldData.byteLength + arraybuffer.byteLength
+				@_data = new Uint8Array @length
+			
+				# Copy old data
+				@_data.set oldData
+				@_data.set arraybuffer, @position
+				@position += arraybuffer.byteLength
+			else
+				@length = arraybuffer.byteLength
+				@_data = arraybuffer
+				@position = arraybuffer.byteLength
+		
+		createError: (fileError) ->
+			@error = fileError
+			@readyState = DONE
+			
+			dispatch ERROR
+			dispatch WRITE_END
 			
 		@_position: -1
 		@_length: 0
@@ -345,17 +357,32 @@ if not window.requestFileSystem
 		
 		#Blob 
 		write: (data) -> #raises (FileException)
+			if readyState is WRITING
+				throw new FileException INVALID_STATE_ERR
+			
+			@readyState = WRITING
+			
+			dispatch WRITE_START
 			@reader.onload = () ->
 				add @reader.result
-				
-			@reader.readAsArrayBuffer data
-		
-		createError: (fileError) ->
-			@error = fileError
-			@readyState = DONE
+				@readyState = DONE
+				dispatch WRITE
+				dispatch WRITE_END
 			
-			dispatch ERROR
-			dispatch WRITE_END
+			@reader.onprogress = (progressEvent) ->
+				# TODO: see whether this is benefitial
+				# Make progress notifications. On getting, while processing the write method, the length and position attributes should indicate the progress made in writing the file as of the last progress notification
+			
+			@reader.onerror = () ->
+				@error = new FileError ABORT_ERR @reader.error
+				@readyState = DONE
+				dispatch ERROR
+				dispatch WRITE_END
+				
+				# TODO: Not yet implemented:
+				# On getting, the length and position attributes should indicate any fractional data successfully written to the file.
+			
+			@reader.readAsArrayBuffer data
 		
 		seek: (offset) -> #raises (FileException)
 			if @readyState is WRITING
