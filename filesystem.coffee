@@ -6,18 +6,6 @@ if not window.BlobBuilder
 
 if not window.requestFileSystem
 	# No native support
-
-	namespace = (namespaceString) ->
-		parts = namespaceString.split '.'
-		parent = window
-		currentPart = ''
-
-		for i in [0, parts.length]
-			currentPart = parts[i]
-			parent[currentPart] = parent[currentPart] || {}
-			parent = parent[currentPart]
-		
-		return parent
 	
 	class jsFileException
 		constructor: (code, msg) ->
