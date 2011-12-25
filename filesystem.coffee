@@ -496,7 +496,8 @@ if not window.requestFileSystem
 		
 		getterTEMPORARY: -> 0
 		getterPERSISTENT: -> 1
-		createFilesystem: (dataStorage) ->
+		
+		createFilesystem = (dataStorage) ->
 			filesystem: new jsFileSystem dataStorage
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
