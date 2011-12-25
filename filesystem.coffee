@@ -336,7 +336,7 @@ if not window.requestFileSystem
 				@_data = arraybuffer
 				@position = arraybuffer.byteLength
 		
-		createError: (fileError) ->
+		handleError = (fileError) ->
 			@error = fileError
 			@readyState = DONE
 			
@@ -357,8 +357,8 @@ if not window.requestFileSystem
 		
 		#Blob 
 		write: (data) -> #raises (FileException)
-			if readyState is WRITING
-				throw new FileException INVALID_STATE_ERR
+			if @readyState is WRITING
+				throw new FileException FileException.INVALID_STATE_ERR
 			
 			@readyState = WRITING
 			
@@ -374,10 +374,7 @@ if not window.requestFileSystem
 				# Make progress notifications. On getting, while processing the write method, the length and position attributes should indicate the progress made in writing the file as of the last progress notification
 			
 			@reader.onerror = () ->
-				@error = new FileError ABORT_ERR @reader.error
-				@readyState = DONE
-				dispatch ERROR
-				dispatch WRITE_END
+				handleError new FileError ABORT_ERR @reader.error
 				
 				# TODO: Not yet implemented:
 				# On getting, the length and position attributes should indicate any fractional data successfully written to the file.
