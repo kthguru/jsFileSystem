@@ -12,16 +12,16 @@ if not window.requestFileSystem
 			@code = code
 			@msg = msg
 		
-		getterNOT_FOUND_ERR              : ->  1
-		getterSECURITY_ERR               : ->  2
-		getterABORT_ERR                  : ->  3
-		getterNOT_READABLE_ERR           : ->  4
-		getterENCODING_ERR               : ->  5
-		getterNO_MODIFICATION_ALLOWED_ERR: ->  6
-		getterINVALID_STATE_ERR          : ->  7
-		getterSYNTAX_ERR                 : ->  8
-		getterQUOTA_EXCEEDED_ERR         : -> 10
 		
+		getter_NOT_FOUND_ERR              : ->  1
+		getter_SECURITY_ERR               : ->  2
+		getter_ABORT_ERR                  : ->  3
+		getter_NOT_READABLE_ERR           : ->  4
+		getter_ENCODING_ERR               : ->  5
+		getter_NO_MODIFICATION_ALLOWED_ERR: ->  6
+		getter_INVALID_STATE_ERR          : ->  7
+		getter_SYNTAX_ERR                 : ->  8
+		getter_QUOTA_EXCEEDED_ERR         : -> 10
 		toString: () ->
 			@msg
 	
@@ -29,9 +29,9 @@ if not window.requestFileSystem
 		constructor: (code, msg) ->
 			super code, msg
 		
-		getterINVALID_MODIFICATION_ERR: ->  9
-		getterTYPE_MISMATCH_ERR       : -> 11
-		getterPATH_EXISTS_ERR         : -> 12
+		getter_INVALID_MODIFICATION_ERR: ->  9
+		getter_TYPE_MISMATCH_ERR       : -> 11
+		getter_PATH_EXISTS_ERR         : -> 12
 	
 	class jsRequest
 	
@@ -70,10 +70,10 @@ if not window.requestFileSystem
 		constructor: (dbrequest) ->
 			@dbrequest = dbrequest
 		
-		getterLOADING: -> @dbrequest.LOADING
-		getterDONE   : -> @dbrequest.DONE
+		getter_LOADING: -> @dbrequest.LOADING
+		getter_DONE   : -> @dbrequest.DONE
 		
-		@getterreadyState: -> @dbrequest.readyState
+		@getter_readyState: -> @dbrequest.readyState
 		onsuccess: undefined
 		onerror  : undefined
 	
@@ -172,7 +172,7 @@ if not window.requestFileSystem
 		
 		@_lastModifiedDate: null
 		
-		@getterlastModifiedDate: () ->
+		@getter_lastModifiedDate: () ->
 			@_lastModifiedDate
 	
 	class jsFileSaver
@@ -206,12 +206,12 @@ if not window.requestFileSystem
 				if @onwriteend
 					@onwriteend event
 		
-		getterWRITE_START: -> 'FileSaverWriteStart'
-		getterPROGRESS   : -> 'FileSaverProgress'
-		getterWRITE      : -> 'FileSaverWrite'
-		getterABORT      : -> 'FileSaverAbort'
-		getterERROR      : -> 'FileSaverError'
-		getterWRITE_END  : -> 'FileSaverWriteEnd'
+		getter_WRITE_START: -> 'FileSaverWriteStart'
+		getter_PROGRESS   : -> 'FileSaverProgress'
+		getter_WRITE      : -> 'FileSaverWrite'
+		getter_ABORT      : -> 'FileSaverAbort'
+		getter_ERROR      : -> 'FileSaverError'
+		getter_WRITE_END  : -> 'FileSaverWriteEnd'
 		
 		dispatch: (eventName) ->
 			# If your browser does not support CustomEvent I don't like you!
@@ -219,9 +219,9 @@ if not window.requestFileSystem
 			event.initCustomEvent eventName, true, true, null
 			document.dispatchEvent event
 		
-		getterINIT    : -> 0
-		getterWRITING : -> 1
-		getterDONE    : -> 2
+		getter_INIT    : -> 0
+		getter_WRITING : -> 1
+		getter_DONE    : -> 2
 		
 		constructor: () ->
 			@reader = new FileReader
@@ -270,11 +270,11 @@ if not window.requestFileSystem
 		abort: () ->
 			@reader.abort
 		
-		@getterreadyState: () ->
+		@getter_readyState: () ->
 			@_readyState
 		
 		#FileError
-		@gettererror: () ->
+		@getter_error: () ->
 			@_error
 		
 		@onwritestart: null
@@ -286,7 +286,7 @@ if not window.requestFileSystem
 	
 	class jsFileWriter extends jsFileSaver
 		
-		getterDO_WRITE: -> 'FileWriterDoWrite'
+		getter_DO_WRITE: -> 'FileWriterDoWrite'
 		@_data: null
 		
 		set @length = (length) ->
@@ -335,13 +335,13 @@ if not window.requestFileSystem
 		@_position: -1
 		@_length: 0
 		
-		@getterlength: () ->
+		@getter_length: () ->
 			@_length
 		
-		@getterposition: () ->
+		@getter_position: () ->
 			@_position
 		
-		@getterlength: () ->
+		@getter_length: () ->
 			@_length
 		
 		#Blob 
@@ -489,14 +489,14 @@ if not window.requestFileSystem
 			
 			@rootEntry = new RootDirectoryEntry this, "/"
 			
-		getterroot: () ->
+		getter_root: () ->
 			@rootEntry
 
 	class jsLocalFileSystem
 		constructor: () ->
 		
-		getterTEMPORARY: -> 0
-		getterPERSISTENT: -> 1
+		getter_TEMPORARY: -> 0
+		getter_PERSISTENT: -> 1
 		
 		createFilesystem = (dataStorage) ->
 			filesystem: new jsFileSystem dataStorage

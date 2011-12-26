@@ -8,7 +8,7 @@ jsfile = open('filesystem.js', 'w')
 jsfile.write('"use strict";\n')
 
 for line in jsoutput.split('\n'):
-	line.replace('getter', 'get ')
+	line = line.replace('getter_', 'get ').replace('setter_', 'set ')
 	print line
 	jsfile.write(line + '\n')
 
