@@ -8,11 +8,19 @@ if not window.BlobBuilder
 if not window.requestFileSystem
 	# No native support
 	
-	class jsFileException
-		constructor: (code, msg) ->
-			@code = code
-			@msg = msg
+	class jsFileException extends Error
+		@base_exception: undefined
 		
+		constructor: (code, secondary) ->
+			if secondary instanceof String
+				super @msg
+			else if secondary instanceof Error
+				@base_exception = secondary
+				super ''
+			else
+				super ''
+			
+			@code = code
 		
 	defStaticReadonly = (clazz, name, value) ->
 		Object.defineProperty clazz.prototype, name, { value: value }
@@ -26,12 +34,10 @@ if not window.requestFileSystem
 	defStaticReadonly jsFileException, 'INVALID_STATE_ERR'          ,  7
 	defStaticReadonly jsFileException, 'SYNTAX_ERR'                 ,  8
 	defStaticReadonly jsFileException, 'QUOTA_EXCEEDED_ERR'         , 10
-		toString: () ->
-			@msg
 	
 	class jsFileError extends jsFileException
-		constructor: (code, msg) ->
-			super code, msg
+		constructor: (code, secondary) ->
+			super code, secondary
 		
 	defStaticReadonly jsFileError, 'INVALID_MODIFICATION_ERR',  9
 	defStaticReadonly jsFileError, 'TYPE_MISMATCH_ERR'       , 11
@@ -41,16 +47,16 @@ if not window.requestFileSystem
 	
 	class jsDataStorage
 		#DSRequestEmul
-		put
+		@put   : undefined
 		#DSRequestEmul
-		get
-		clear
-		remove
+		@get   : undefined
+		@clear : undefined
+		@remove: undefined
 
 	class jsLocalDataStorage extends jsDataStorage
 		constructor: (localStorage) ->
-			@storage = localStorage
 			super
+			@storage = localStorage
 		
 		pathToKey: (path) ->
 			path
