@@ -12,16 +12,19 @@ if not window.requestFileSystem
 			@code = code
 			@msg = msg
 		
+	defProp = (clazz, name, value) ->
+		Object.defineProperty clazz.prototype, name, { get: -> value }
 		
-		getter_NOT_FOUND_ERR              : ->  1
-		getter_SECURITY_ERR               : ->  2
-		getter_ABORT_ERR                  : ->  3
-		getter_NOT_READABLE_ERR           : ->  4
-		getter_ENCODING_ERR               : ->  5
-		getter_NO_MODIFICATION_ALLOWED_ERR: ->  6
-		getter_INVALID_STATE_ERR          : ->  7
-		getter_SYNTAX_ERR                 : ->  8
-		getter_QUOTA_EXCEEDED_ERR         : -> 10
+	defProp jsFileException, 'NOT_FOUND_ERR'              ,  1
+	defProp jsFileException, 'SECURITY_ERR'               ,  2
+	defProp jsFileException, 'ABORT_ERR'                  ,  3
+	defProp jsFileException, 'NOT_READABLE_ERR'           ,  4
+	defProp jsFileException, 'ENCODING_ERR'               ,  5
+	defProp jsFileException, 'NO_MODIFICATION_ALLOWED_ERR',  6
+	defProp jsFileException, 'INVALID_STATE_ERR'          ,  7
+	defProp jsFileException, 'SYNTAX_ERR'                 ,  8
+	defProp jsFileException, 'QUOTA_EXCEEDED_ERR'         , 10
+		
 		toString: () ->
 			@msg
 	
@@ -29,9 +32,9 @@ if not window.requestFileSystem
 		constructor: (code, msg) ->
 			super code, msg
 		
-		getter_INVALID_MODIFICATION_ERR: ->  9
-		getter_TYPE_MISMATCH_ERR       : -> 11
-		getter_PATH_EXISTS_ERR         : -> 12
+	defProp jsFileError, 'INVALID_MODIFICATION_ERR',  9
+	defProp jsFileError, 'TYPE_MISMATCH_ERR'       , 11
+	defProp jsFileError, 'PATH_EXISTS_ERR'         , 12
 	
 	class jsRequest
 	
@@ -70,12 +73,12 @@ if not window.requestFileSystem
 		constructor: (dbrequest) ->
 			@dbrequest = dbrequest
 		
-		getter_LOADING: -> @dbrequest.LOADING
-		getter_DONE   : -> @dbrequest.DONE
-		
 		@getter_readyState: -> @dbrequest.readyState
 		onsuccess: undefined
 		onerror  : undefined
+	
+	defProp jsDatabaseRequest, 'LOADING', @dbrequest.LOADING
+	defProp jsDatabaseRequest, 'DONE'   , @dbrequest.DONE
 	
 	class jsDatabaseDataStorage extends jsDataStorage
 		constructor: (objectStore) ->
@@ -175,6 +178,17 @@ if not window.requestFileSystem
 		@getter_lastModifiedDate: () ->
 			@_lastModifiedDate
 	
+	defProp jsFileSaver, 'WRITE_START', 'FileSaverWriteStart'
+	defProp jsFileSaver, 'PROGRESS'   , 'FileSaverProgress'
+	defProp jsFileSaver, 'WRITE'      , 'FileSaverWrite'
+	defProp jsFileSaver, 'ABORT'      , 'FileSaverAbort'
+	defProp jsFileSaver, 'ERROR'      , 'FileSaverError'
+	defProp jsFileSaver, 'WRITE_END'  , 'FileSaverWriteEnd'
+	
+	defProp jsFileSaver, 'INIT'   , 0
+	defProp jsFileSaver, 'WRITING', 1
+	defProp jsFileSaver, 'DONE'   , 2
+	
 	class jsFileSaver
 		registerFunctions: (fileReader) ->
 			fileReader.onabort = (event) ->
@@ -206,22 +220,12 @@ if not window.requestFileSystem
 				if @onwriteend
 					@onwriteend event
 		
-		getter_WRITE_START: -> 'FileSaverWriteStart'
-		getter_PROGRESS   : -> 'FileSaverProgress'
-		getter_WRITE      : -> 'FileSaverWrite'
-		getter_ABORT      : -> 'FileSaverAbort'
-		getter_ERROR      : -> 'FileSaverError'
-		getter_WRITE_END  : -> 'FileSaverWriteEnd'
-		
 		dispatch: (eventName) ->
 			# If your browser does not support CustomEvent I don't like you!
 			event = document.createEvent 'CustomEvent'
 			event.initCustomEvent eventName, true, true, null
 			document.dispatchEvent event
 		
-		getter_INIT    : -> 0
-		getter_WRITING : -> 1
-		getter_DONE    : -> 2
 		
 		constructor: () ->
 			@reader = new FileReader
@@ -272,7 +276,7 @@ if not window.requestFileSystem
 		
 		@getter_readyState: () ->
 			@_readyState
-		
+			
 		#FileError
 		@getter_error: () ->
 			@_error
@@ -284,9 +288,10 @@ if not window.requestFileSystem
 		@onerror:      null
 		@onwriteend:   null
 	
+	defProp jsFileWriter, 'DO_WRITE', 'FileWriterDoWrite'
+	
 	class jsFileWriter extends jsFileSaver
 		
-		getter_DO_WRITE: -> 'FileWriterDoWrite'
 		@_data: null
 		
 		set @length = (length) ->
@@ -492,11 +497,11 @@ if not window.requestFileSystem
 		getter_root: () ->
 			@rootEntry
 
+	defProp jsLocalFileSystem, 'TEMPORARY' , 0
+	defProp jsLocalFileSystem, 'PERSISTENT', 1
+
 	class jsLocalFileSystem
 		constructor: () ->
-		
-		getter_TEMPORARY: -> 0
-		getter_PERSISTENT: -> 1
 		
 		createFilesystem = (dataStorage) ->
 			filesystem: new jsFileSystem dataStorage
