@@ -227,9 +227,9 @@ if not window.requestFileSystem
 			event.initCustomEvent eventName, true, true, null
 			document.dispatchEvent event
 		
+		@reader = new FileReader
 		
 		constructor: () ->
-			@reader = new FileReader
 			registerFunctions @reader
 			
 			fnct = () ->
