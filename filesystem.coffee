@@ -108,7 +108,7 @@ if not window.requestFileSystem
 		remove: (path) ->
 			new DatabaseRequest @objectStore.delete pathToKey path
 	
-	class js.Metadata
+	class jsMetadata
 		constructor: () ->
 			defineProperty this, "modificationTime", { value : undefined }
 
