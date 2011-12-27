@@ -83,9 +83,8 @@ if not window.requestFileSystem
 			defineProperty this, 'LOADING'   , { value: @dbrequest.LOADING }
 			defineProperty this, 'DONE'      , { value: @dbrequest.DONE    }
 		
-		onsuccess: undefined
-		onerror  : undefined
-	
+		@onsuccess: undefined
+		@onerror  : undefined
 	
 	class jsDatabaseDataStorage extends jsDataStorage
 		constructor: (objectStore) ->
