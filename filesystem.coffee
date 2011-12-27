@@ -1,3 +1,4 @@
+`"use strict";`
 # Hook up FileSystem API
 
 window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem
