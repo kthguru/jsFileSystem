@@ -13,19 +13,19 @@ if not window.requestFileSystem
 			@code = code
 			@msg = msg
 		
-	defProp = (clazz, name, value) ->
-		Object.defineProperty clazz.prototype, name, { get: -> value }
 		
-	defProp jsFileException, 'NOT_FOUND_ERR'              ,  1
-	defProp jsFileException, 'SECURITY_ERR'               ,  2
-	defProp jsFileException, 'ABORT_ERR'                  ,  3
-	defProp jsFileException, 'NOT_READABLE_ERR'           ,  4
-	defProp jsFileException, 'ENCODING_ERR'               ,  5
-	defProp jsFileException, 'NO_MODIFICATION_ALLOWED_ERR',  6
-	defProp jsFileException, 'INVALID_STATE_ERR'          ,  7
-	defProp jsFileException, 'SYNTAX_ERR'                 ,  8
-	defProp jsFileException, 'QUOTA_EXCEEDED_ERR'         , 10
+	defStaticReadonly = (clazz, name, value) ->
+		Object.defineProperty clazz.prototype, name, { value: value }
 		
+	defStaticReadonly jsFileException, 'NOT_FOUND_ERR'              ,  1
+	defStaticReadonly jsFileException, 'SECURITY_ERR'               ,  2
+	defStaticReadonly jsFileException, 'ABORT_ERR'                  ,  3
+	defStaticReadonly jsFileException, 'NOT_READABLE_ERR'           ,  4
+	defStaticReadonly jsFileException, 'ENCODING_ERR'               ,  5
+	defStaticReadonly jsFileException, 'NO_MODIFICATION_ALLOWED_ERR',  6
+	defStaticReadonly jsFileException, 'INVALID_STATE_ERR'          ,  7
+	defStaticReadonly jsFileException, 'SYNTAX_ERR'                 ,  8
+	defStaticReadonly jsFileException, 'QUOTA_EXCEEDED_ERR'         , 10
 		toString: () ->
 			@msg
 	
@@ -33,9 +33,9 @@ if not window.requestFileSystem
 		constructor: (code, msg) ->
 			super code, msg
 		
-	defProp jsFileError, 'INVALID_MODIFICATION_ERR',  9
-	defProp jsFileError, 'TYPE_MISMATCH_ERR'       , 11
-	defProp jsFileError, 'PATH_EXISTS_ERR'         , 12
+	defStaticReadonly jsFileError, 'INVALID_MODIFICATION_ERR',  9
+	defStaticReadonly jsFileError, 'TYPE_MISMATCH_ERR'       , 11
+	defStaticReadonly jsFileError, 'PATH_EXISTS_ERR'         , 12
 	
 	class jsRequest
 	
@@ -73,13 +73,13 @@ if not window.requestFileSystem
 	class jsDatabaseRequest
 		constructor: (dbrequest) ->
 			@dbrequest = dbrequest
+			defineProperty this, 'readyState', { get: () -> @dbrequest.readyState }
+			defineProperty this, 'LOADING'   , { value: @dbrequest.LOADING }
+			defineProperty this, 'DONE'      , { value: @dbrequest.DONE    }
 		
-		@getter_readyState: -> @dbrequest.readyState
 		onsuccess: undefined
 		onerror  : undefined
 	
-	defProp jsDatabaseRequest, 'LOADING', @dbrequest.LOADING
-	defProp jsDatabaseRequest, 'DONE'   , @dbrequest.DONE
 	
 	class jsDatabaseDataStorage extends jsDataStorage
 		constructor: (objectStore) ->
@@ -105,31 +105,24 @@ if not window.requestFileSystem
 	
 	class js.Metadata
 		constructor: () ->
-			Object.defineProperty this, "modificationTime", {value : undefined,
-			writable : false}
+			defineProperty this, "modificationTime", { value : undefined }
 
 	class jsEntry
 		constructor: (parent, fullPath) ->
-			Object.defineProperty this, "parent", {value : parent,
-			writable : false}
+			defineProperty this, "parent", { value : parent }
 			
 			filesystem = parent.filesystem
 			
-			Object.defineProperty this, "filesystem", {value : filesystem,
-			writable : false}
+			defineProperty this, "filesystem", { value : filesystem }
 			
-			Object.defineProperty this, "fullPath", {value : fullPath,
-			writable : false}
+			defineProperty this, "fullPath", { value : fullPath }
 			
 			name = extractName @fullPath
-			Object.defineProperty this, "name", {value : name,
-			writable : false}
+			defineProperty this, "name", { value : name }
 			
-			Object.defineProperty this, "isFile", {value : false,
-			writable : false}
+			defineProperty this, "isFile", { value : false }
 			
-			Object.defineProperty this, "isDirectory", {value : false,
-			writable : false}
+			defineProperty this, "isDirectory", { value : false }
 			
 			@metadata = null
 			@lastFileModificationDate = undefined
@@ -170,27 +163,24 @@ if not window.requestFileSystem
 		data: []
 		
 	class jsFile extends jsBlob
-		constructor: (name) ->
-			Object.defineProperty this, "name", {value : name,
-			writable : false}
-		
 		@_lastModifiedDate: null
 		
-		@getter_lastModifiedDate: () ->
-			@_lastModifiedDate
-	
-	defProp jsFileSaver, 'WRITE_START', 'FileSaverWriteStart'
-	defProp jsFileSaver, 'PROGRESS'   , 'FileSaverProgress'
-	defProp jsFileSaver, 'WRITE'      , 'FileSaverWrite'
-	defProp jsFileSaver, 'ABORT'      , 'FileSaverAbort'
-	defProp jsFileSaver, 'ERROR'      , 'FileSaverError'
-	defProp jsFileSaver, 'WRITE_END'  , 'FileSaverWriteEnd'
-	
-	defProp jsFileSaver, 'INIT'   , 0
-	defProp jsFileSaver, 'WRITING', 1
-	defProp jsFileSaver, 'DONE'   , 2
-	
+		constructor: (name) ->
+			defineProperty this, "name", {value : name }
+			defineProperty this, "lastModifiedDate", { get: -> @_lastModifiedDate } 
+		
 	class jsFileSaver
+		defStaticReadonly jsFileSaver, 'WRITE_START', 'FileSaverWriteStart'
+		defStaticReadonly jsFileSaver, 'PROGRESS'   , 'FileSaverProgress'
+		defStaticReadonly jsFileSaver, 'WRITE'      , 'FileSaverWrite'
+		defStaticReadonly jsFileSaver, 'ABORT'      , 'FileSaverAbort'
+		defStaticReadonly jsFileSaver, 'ERROR'      , 'FileSaverError'
+		defStaticReadonly jsFileSaver, 'WRITE_END'  , 'FileSaverWriteEnd'
+	
+		defStaticReadonly jsFileSaver, 'INIT'   , 0
+		defStaticReadonly jsFileSaver, 'WRITING', 1
+		defStaticReadonly jsFileSaver, 'DONE'   , 2
+		
 		registerFunctions: (fileReader) ->
 			fileReader.onabort = (event) ->
 				if @onabort
@@ -228,6 +218,8 @@ if not window.requestFileSystem
 			document.dispatchEvent event
 		
 		@reader = new FileReader
+		@_readyState = jsFileSaver.prototype.INIT
+		@_error =      null
 		
 		constructor: () ->
 			registerFunctions @reader
@@ -261,26 +253,19 @@ if not window.requestFileSystem
 				if @onwriteend
 					@onwriteend
 			document.addEventListener WRITE_END  , fnct, false
+			
+			defineProperty this, 'readyState', { get: -> @_readyState }
+			defineProperty this, 'error'     , { get: -> @_error      }
 		
-		set @error = (error) ->
+		setError = (error) ->
 			#only enable error setting here
 			@_error = error
 		
-		set @readyState = (state) ->
+		setReadyState = (state) ->
 			@_readyState = state
-		
-		@_readyState: INIT
-		@_error:      null
 		
 		abort: () ->
 			@reader.abort
-		
-		@getter_readyState: () ->
-			@_readyState
-			
-		#FileError
-		@getter_error: () ->
-			@_error
 		
 		@onwritestart: null
 		@onprogress:   null
@@ -289,13 +274,14 @@ if not window.requestFileSystem
 		@onerror:      null
 		@onwriteend:   null
 	
-	defProp jsFileWriter, 'DO_WRITE', 'FileWriterDoWrite'
-	
 	class jsFileWriter extends jsFileSaver
+		defStaticReadonly jsFileWriter, 'DO_WRITE', 'FileWriterDoWrite'
 		
-		@_data: null
+		@_data     = null
+		@_position = -1
+		@_length   =  0
 		
-		set @length = (length) ->
+		setLength = (length) ->
 				@_length = length
 		
 		constructor: () ->
@@ -309,58 +295,49 @@ if not window.requestFileSystem
 					else
 						@_data = new Uint8Array @_data, 0, size
 					
-					@length = size
+					setLength size
 				
 				@readyState = DONE
 				dispatch WRITE
 				dispatch WRITE_END
 			document.addEventListener DO_WRITE, fnct, false
 			
+			defineProperty this, 'length'  , { get: -> @_length   }
+			defineProperty this, 'position', { get: -> @_position }
+			
 		add = (arraybuffer) ->
 			if @_data
 				oldData = @_data;
-				@length = oldData.byteLength + arraybuffer.byteLength
+				@_length = oldData.byteLength + arraybuffer.byteLength
 				@_data = new Uint8Array @length
 			
 				# Copy old data
 				@_data.set oldData
 				@_data.set arraybuffer, @position
-				@position += arraybuffer.byteLength
+				@_position += arraybuffer.byteLength
 			else
-				@length = arraybuffer.byteLength
+				@_length arraybuffer.byteLength
 				@_data = arraybuffer
-				@position = arraybuffer.byteLength
+				@_position = arraybuffer.byteLength
 		
 		handleError = (fileError) ->
-			@error = fileError
-			@readyState = DONE
+			setError fileError
+			@_readyState = DONE
 			
 			dispatch ERROR
 			dispatch WRITE_END
-			
-		@_position: -1
-		@_length: 0
-		
-		@getter_length: () ->
-			@_length
-		
-		@getter_position: () ->
-			@_position
-		
-		@getter_length: () ->
-			@_length
 		
 		#Blob 
 		write: (data) -> #raises (FileException)
 			if @readyState is WRITING
 				throw new FileException FileException.INVALID_STATE_ERR
 			
-			@readyState = WRITING
+			@_readyState = WRITING
 			
 			dispatch WRITE_START
 			@reader.onload = () ->
 				add @reader.result
-				@readyState = DONE
+				@_readyState = DONE
 				dispatch WRITE
 				dispatch WRITE_END
 			
@@ -406,8 +383,7 @@ if not window.requestFileSystem
 	class jsFileEntry
 		constructor: () ->
 			super
-			Object.defineProperty this, "isFile", {value : true,
-			writable : false}
+			defineProperty this, "isFile", { value : true }
 		
 		# FileWriterCallback, optional ErrorCallback
 		createWriter: (successCallback, errorCallback) ->
@@ -422,8 +398,7 @@ if not window.requestFileSystem
 	class jsDirectoryEntry
 		constructor: (parent, path) ->
 			super parent, path
-			Object.defineProperty this, "isDirectory", {value : true,
-			writable : false}
+			defineProperty this, "isDirectory", { value : true }
 		
 		children: new Object
 		
@@ -490,18 +465,15 @@ if not window.requestFileSystem
 
 	class jsFileSystem
 		constructor: () ->
-			Object.defineProperty this, "name", {value : "whatever",
-			writable : false}
+			defineProperty this, "name", { value : "whatever" }
 			
-			@rootEntry = new RootDirectoryEntry this, "/"
-			
-		getter_root: () ->
-			@rootEntry
-
-	defProp jsLocalFileSystem, 'TEMPORARY' , 0
-	defProp jsLocalFileSystem, 'PERSISTENT', 1
-
+			rootEntry = new RootDirectoryEntry this, "/"
+			defineProperty this, 'root', { get: -> rootEntry }
+	
 	class jsLocalFileSystem
+		defStaticReadonly jsLocalFileSystem, 'TEMPORARY' , 0
+		defStaticReadonly jsLocalFileSystem, 'PERSISTENT', 1
+		
 		constructor: () ->
 		
 		createFilesystem = (dataStorage) ->
