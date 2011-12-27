@@ -518,5 +518,6 @@ if not window.requestFileSystem
 					errorCallback.handleEvent error
 				setTimeout func, 0
 
-	window.requestFileSystem = jsLocalFileSystem.requestFileSystem;
+	window.requestFileSystem = jsLocalFileSystem.requestFileSystem
+	window.useFileSystemEmulation = true
 
