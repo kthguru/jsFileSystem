@@ -159,7 +159,7 @@ if not window.requestFileSystem
 			
 			Object.defineProperty this, "name", { value : name }
 			
-			Object.defineProperty this, "isFile", { value : typeFlag is FILE_ENTRY }
+			Object.defineProperty this, "isFile"     , { value : typeFlag is FILE_ENTRY }
 			Object.defineProperty this, "isDirectory", { value : typeFlag is DIRECTORY_ENTRY }
 			
 			@metadata = null
