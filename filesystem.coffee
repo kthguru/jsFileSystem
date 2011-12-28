@@ -149,7 +149,7 @@ if not window.requestFileSystem
 					@metadata = {
 						modificationTime: @lastFileModificationDate
 					}
-				successCallback.handleEvent @metadata
+				callEventLiberal successCallback, @metadata
 			setTimeout func, 0
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
@@ -162,11 +162,9 @@ if not window.requestFileSystem
 		
 		# VoidCallback, optional ErrorCallback
 		remove: (successCallback, errorCallback) ->
-			func = {
-				handleEvent: (entry) ->
-					removedEntry = delete entry.children[@name]
-					successCallback.handleEvent removedEntry
-			}
+			func = (entry) ->
+				removedEntry = delete entry.children[@name]
+				callEventLiberal successCallback, removedEntry
 				
 			getParent func, errorCallback
 		
@@ -402,7 +400,9 @@ if not window.requestFileSystem
 		# FileWriterCallback, optional ErrorCallback
 		createWriter: (successCallback, errorCallback) ->
 			writer = new FileWriter
-			setTimeout successCallback.handleEvent writer, 0
+			func = ->
+				callEventLiberal successCallback, writer
+			setTimeout func, 0
 		
 		# FileCallback, optional ErrorCallback
 		file: (successCallback, errorCallback) ->
@@ -433,13 +433,13 @@ if not window.requestFileSystem
 				if options.create and options.exclusive
 					func = ->
 						error = new FileError FileError.ABORT_ERR "File already exists."
-						errorCallback.handleEvent error
+						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
 				else if not options.create and entry.isFile
 					func = ->
 						error = new FileError FileError.ABORT_ERR "Not a Directory but a File."
-						errorCallback.handleEvent error
+						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
 			else
@@ -448,7 +448,7 @@ if not window.requestFileSystem
 				else
 					func = ->
 						error = new FileError FileError.ABORT_ERR "Directory does not exist."
-						errorCallback.handleEvent error
+						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
 			
@@ -474,8 +474,8 @@ if not window.requestFileSystem
 		
 		# EntriesCallback, optional ErrorCallback 
 		readEntries: (successCallback, errorCallback) ->
-			successCallback.handleEvent @dirEntry.children
-			successCallback.handleEvent []
+			callEventLiberal successCallback, @dirEntry.children
+			callEventLiberal successCallback, []
 
 	class jsFileSystem
 		@maxByteCount   = 0
@@ -521,7 +521,7 @@ if not window.requestFileSystem
 				if errorCallback 
 					func = ->
 						error = new FileError FileError.ABORT_ERR "Only PERSISTENT type is supported."
-						errorCallback.handleEvent error
+						callEventLiberal errorCallback, error
 					
 					setTimeout func, 0
 			
@@ -531,21 +531,21 @@ if not window.requestFileSystem
 					database = request.result
 					object_store = database.createObjectStore "FileSystem"
 					fs = createFilesystem size, new jsDatabaseDataStorage object_storage
-					successCallback.handleEvent fs
+					callEventLiberal successCallback, fs
 				
 				request.onerror = ->
 					error = new FileError FileError.ABORT_ERR ""
-					errorCallback.handleEvent error
+					callEventLiberal errorCallback, error
 				
 			else if window.localStorage
 				fs = createFilesystem size, new jsLocalDataStorage window.localStorage
-				func ->
-					successCallback.handleEvent fs
+				func = ->
+					callEventLiberal successCallback, fs
 				setTimeout func, 0
 			else
 				func = ->
 					error = new FileError FileError.ABORT_ERR "IndexedDB and localStorage are not supported."
-					errorCallback.handleEvent error
+					callEventLiberal errorCallback, error
 				setTimeout func, 0
 
 	window.requestFileSystem = jsLocalFileSystem.requestFileSystem
