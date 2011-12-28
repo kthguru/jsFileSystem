@@ -2,8 +2,7 @@
 # Hook up FileSystem API
 
 window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem
-if not window.BlobBuilder
-	window.BlobBuilder = window.WebKitBlobBuilder || window.MozBlobBuilder
+window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder
 
 if not window.requestFileSystem
 	# No native support
