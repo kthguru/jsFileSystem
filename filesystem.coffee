@@ -121,22 +121,23 @@ if not window.requestFileSystem
 		constructor: () ->
 			Object.defineProperty this, "modificationTime", { value : undefined }
 
+	# Following the valid type flags
+	FILE_ENTRY      = 1
+	DIRECTORY_ENTRY = 2
 	class jsEntry
-		constructor: (parent, fullPath) ->
+		constructor: (parent, name, typeFlag) ->
 			Object.defineProperty this, "parent", { value : parent }
 			
 			filesystem = parent.filesystem
 			
 			Object.defineProperty this, "filesystem", { value : filesystem }
 			
-			Object.defineProperty this, "fullPath", { value : fullPath }
+			Object.defineProperty this, "fullPath", { value : parent.fullPath }
 			
-			name = extractName @fullPath
 			Object.defineProperty this, "name", { value : name }
 			
-			Object.defineProperty this, "isFile", { value : false }
-			
-			Object.defineProperty this, "isDirectory", { value : false }
+			Object.defineProperty this, "isFile", { value : typeFlag is FILE_ENTRY }
+			Object.defineProperty this, "isDirectory", { value : typeFlag is DIRECTORY_ENTRY }
 			
 			@metadata = null
 			@lastFileModificationDate = undefined
@@ -395,9 +396,8 @@ if not window.requestFileSystem
 			dispatch DO_WRITE
 	
 	class jsFileEntry extends jsEntry
-		constructor: () ->
-			super
-			Object.defineProperty this, "isFile", { value : true }
+		constructor: (parent, name) ->
+			super parent, name, FILE_ENTRY
 		
 		# FileWriterCallback, optional ErrorCallback
 		createWriter: (successCallback, errorCallback) ->
@@ -410,9 +410,8 @@ if not window.requestFileSystem
 		
 
 	class jsDirectoryEntry extends jsEntry
-		constructor: (parent, path) ->
-			super parent, path
-			Object.defineProperty this, "isDirectory", { value : true }
+		constructor: (parent, name) ->
+			super parent, name, DIRECTORY_ENTRY
 		
 		children: new Object
 		
@@ -460,12 +459,13 @@ if not window.requestFileSystem
 			remove successCallback, errorCallback
 			
 	class jsRootDirectoryEntry extends jsDirectoryEntry
-		constructor: (filesystem, path) ->
+		constructor: (filesystem, path, name) ->
 			fake_parent = {
 				parent:     this
+				fullPath:   path
 				filesystem: filesystem
 			}
-			super fake_parent, path
+			super fake_parent, name
 	
 	class jsDirectoryReader
 		constructor: (dirEntry) ->
@@ -488,7 +488,7 @@ if not window.requestFileSystem
 			
 			Object.defineProperty this, "name", { value : "whatever" }
 			
-			rootEntry = new jsRootDirectoryEntry this, "/"
+			rootEntry = new jsRootDirectoryEntry this, "/", ''
 			Object.defineProperty this, 'root', { get: -> rootEntry }
 			Object.defineProperty this, 'max_byte_count'    , { get: -> @maxByteCount }
 			Object.defineProperty this, 'available_byte_count', { get: -> @availByteCount }
