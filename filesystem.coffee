@@ -79,9 +79,9 @@ if not window.requestFileSystem
 	class jsDatabaseRequest
 		constructor: (dbrequest) ->
 			@dbrequest = dbrequest
-			defineProperty this, 'readyState', { get: () -> @dbrequest.readyState }
-			defineProperty this, 'LOADING'   , { value: @dbrequest.LOADING }
-			defineProperty this, 'DONE'      , { value: @dbrequest.DONE    }
+			Object.defineProperty this, 'readyState', { get: () -> @dbrequest.readyState }
+			Object.defineProperty this, 'LOADING'   , { value: @dbrequest.LOADING }
+			Object.defineProperty this, 'DONE'      , { value: @dbrequest.DONE    }
 		
 		@onsuccess: undefined
 		@onerror  : undefined
@@ -110,24 +110,24 @@ if not window.requestFileSystem
 	
 	class jsMetadata
 		constructor: () ->
-			defineProperty this, "modificationTime", { value : undefined }
+			Object.defineProperty this, "modificationTime", { value : undefined }
 
 	class jsEntry
 		constructor: (parent, fullPath) ->
-			defineProperty this, "parent", { value : parent }
+			Object.defineProperty this, "parent", { value : parent }
 			
 			filesystem = parent.filesystem
 			
-			defineProperty this, "filesystem", { value : filesystem }
+			Object.defineProperty this, "filesystem", { value : filesystem }
 			
-			defineProperty this, "fullPath", { value : fullPath }
+			Object.defineProperty this, "fullPath", { value : fullPath }
 			
 			name = extractName @fullPath
-			defineProperty this, "name", { value : name }
+			Object.defineProperty this, "name", { value : name }
 			
-			defineProperty this, "isFile", { value : false }
+			Object.defineProperty this, "isFile", { value : false }
 			
-			defineProperty this, "isDirectory", { value : false }
+			Object.defineProperty this, "isDirectory", { value : false }
 			
 			@metadata = null
 			@lastFileModificationDate = undefined
@@ -171,8 +171,8 @@ if not window.requestFileSystem
 		@_lastModifiedDate: null
 		
 		constructor: (name) ->
-			defineProperty this, "name", {value : name }
-			defineProperty this, "lastModifiedDate", { get: -> @_lastModifiedDate } 
+			Object.defineProperty this, "name", {value : name }
+			Object.defineProperty this, "lastModifiedDate", { get: -> @_lastModifiedDate } 
 		
 	class jsFileSaver
 		defStaticReadonly jsFileSaver, 'WRITE_START', 'FileSaverWriteStart'
@@ -259,8 +259,8 @@ if not window.requestFileSystem
 					@onwriteend
 			document.addEventListener WRITE_END  , fnct, false
 			
-			defineProperty this, 'readyState', { get: -> @_readyState }
-			defineProperty this, 'error'     , { get: -> @_error      }
+			Object.defineProperty this, 'readyState', { get: -> @_readyState }
+			Object.defineProperty this, 'error'     , { get: -> @_error      }
 		
 		setError = (error) ->
 			#only enable error setting here
@@ -388,7 +388,7 @@ if not window.requestFileSystem
 	class jsFileEntry
 		constructor: () ->
 			super
-			defineProperty this, "isFile", { value : true }
+			Object.defineProperty this, "isFile", { value : true }
 		
 		# FileWriterCallback, optional ErrorCallback
 		createWriter: (successCallback, errorCallback) ->
@@ -403,7 +403,7 @@ if not window.requestFileSystem
 	class jsDirectoryEntry
 		constructor: (parent, path) ->
 			super parent, path
-			defineProperty this, "isDirectory", { value : true }
+			Object.defineProperty this, "isDirectory", { value : true }
 		
 		children: new Object
 		
@@ -477,13 +477,13 @@ if not window.requestFileSystem
 			@maxByteCount = byte_count
 			@availByteCount = @maxByteCount
 			
-			defineProperty this, "name", { value : "whatever" }
+			Object.defineProperty this, "name", { value : "whatever" }
 			
 			rootEntry = new RootDirectoryEntry this, "/"
-			defineProperty this, 'root', { get: -> rootEntry }
-			defineProperty this, 'max_byte_count'    , { get: -> @maxByteCount }
-			defineProperty this, 'available_byte_count', { get: -> @availByteCount }
-			defineProperty this, 'used_byte_count'     , { get: -> @usedByteCount }
+			Object.defineProperty this, 'root', { get: -> rootEntry }
+			Object.defineProperty this, 'max_byte_count'    , { get: -> @maxByteCount }
+			Object.defineProperty this, 'available_byte_count', { get: -> @availByteCount }
+			Object.defineProperty this, 'used_byte_count'     , { get: -> @usedByteCount }
 			
 		reserveBytes: (byteCount) ->
 			if (@usedByteCount + byteCount) > maxByteCount
