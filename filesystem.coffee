@@ -148,6 +148,7 @@ if not window.requestFileSystem
 			path.slice index + 1
 		
 		@_byteCount: 0
+		
 		constructor: (parent, name, typeFlag) ->
 			Object.defineProperty this, "parent", { value : parent }
 			
@@ -557,7 +558,8 @@ if not window.requestFileSystem
 		@availByteCount = 0
 		@usedByteCount  = 0
 		
-		constructor: (byte_count, dataStorage) ->
+		constructor: (type, byte_count, dataStorage) ->
+			@_type = type
 			@maxByteCount = byte_count
 			@availByteCount = @maxByteCount
 			
@@ -589,18 +591,17 @@ if not window.requestFileSystem
 		constructor: () ->
 		filesystems = []
 		
-		createFilesystem = (size, dataStorage) ->
-			fs = new jsFileSystem size, dataStorage
+		createFilesystem = (type, size, dataStorage) ->
+			fs = new jsFileSystem type, size, dataStorage
 			filesystems.push fs
 			fs
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		@requestFileSystem: (type, size, successCallback, errorCallback) ->
-			if type is not PERSISTENT
-				# TEMPORARY is not supported
+			if not (type is PERSISTENT or type is TEMPORARY)
 				if errorCallback 
 					func = ->
-						error = new FileError FileError.ABORT_ERR "Only PERSISTENT type is supported."
+						error = new FileError FileError.ABORT_ERR "Wrong type. <" + type + "> is not supported."
 						callEventLiberal errorCallback, error
 					
 					setTimeout func, 0
@@ -610,7 +611,7 @@ if not window.requestFileSystem
 				request.onsuccess = ->
 					database = request.result
 					object_store = database.createObjectStore "FileSystem"
-					fs = createFilesystem size, new jsDatabaseDataStorage object_storage
+					fs = createFilesystem type, size, new jsDatabaseDataStorage object_storage
 					callEventLiberal successCallback, fs
 				
 				request.onerror = ->
@@ -618,7 +619,7 @@ if not window.requestFileSystem
 					callEventLiberal errorCallback, error
 				
 			else if window.localStorage
-				fs = createFilesystem size, new jsLocalDataStorage window.localStorage
+				fs = createFilesystem type, size, new jsLocalDataStorage window.localStorage
 				func = ->
 					callEventLiberal successCallback, fs
 				setTimeout func, 0
