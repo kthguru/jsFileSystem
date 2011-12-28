@@ -469,8 +469,7 @@ if not window.requestFileSystem
 	
 	class jsDirectoryReader
 		constructor: (dirEntry) ->
-			Object.defineProperty this, "dirEntry", {value : dirEntry,
-			writable : false}
+			Object.defineProperty this, "dirEntry", {value : dirEntry }
 		
 		# EntriesCallback, optional ErrorCallback 
 		readEntries: (successCallback, errorCallback) ->
