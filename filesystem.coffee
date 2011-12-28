@@ -95,8 +95,8 @@ if not window.requestFileSystem
 		@onerror  : undefined
 	
 	class jsDatabaseDataStorage extends jsDataStorage
-		constructor: (objectStore) ->
-			@objectStore = objectStore
+		constructor: (database) ->
+			@objectStore = database.createObjectStore "FileSystem"
 			super
 		
 		pathToKey: (path) ->
@@ -610,9 +610,7 @@ if not window.requestFileSystem
 			else if window.indexedDB
 				request = window.indexedDB.open "___jsLocalFileSystem___"
 				request.onsuccess = ->
-					database = request.result
-					object_store = database.createObjectStore "FileSystem"
-					fs = createFilesystem type, size, new jsDatabaseDataStorage object_storage
+					fs = createFilesystem type, size, new jsDatabaseDataStorage request.result
 					callEventLiberal successCallback, fs
 				
 				request.onerror = ->
