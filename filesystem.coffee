@@ -147,6 +147,7 @@ if not window.requestFileSystem
 			
 			path.slice index + 1
 		
+		@_byteCount: 0
 		constructor: (parent, name, typeFlag) ->
 			Object.defineProperty this, "parent", { value : parent }
 			
@@ -163,6 +164,8 @@ if not window.requestFileSystem
 			
 			@metadata = null
 			@lastFileModificationDate = undefined
+			
+			filesystem.reserveBytes this
 			
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
@@ -567,7 +570,12 @@ if not window.requestFileSystem
 			Object.defineProperty this, 'used_byte_count'     , { get: -> @usedByteCount  }
 			
 		reserveBytes: (byteCount) ->
-			if (@usedByteCount + byteCount) > maxByteCount
+			
+			if not byteCount instanceof Number
+				# Assume this is an Entry
+				byteCount = byteCount._byteCount
+			
+			if (@usedByteCount + byteCount) > @maxByteCount
 				return false
 			
 			@usedByteCount += byteCount
@@ -582,7 +590,7 @@ if not window.requestFileSystem
 		filesystems = []
 		
 		createFilesystem = (size, dataStorage) ->
-			fs = new jsFileSystem dataStorage
+			fs = new jsFileSystem size, dataStorage
 			filesystems.push fs
 			fs
 		
