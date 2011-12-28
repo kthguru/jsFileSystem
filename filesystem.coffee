@@ -155,7 +155,7 @@ if not window.requestFileSystem
 			
 			Object.defineProperty this, "filesystem", { value : filesystem }
 			
-			Object.defineProperty this, "fullPath", { value : parent.fullPath }
+			Object.defineProperty this, "fullPath", { value : parent.fullPath + SEPERATOR + parent.name }
 			
 			Object.defineProperty this, "name", { value : name }
 			
