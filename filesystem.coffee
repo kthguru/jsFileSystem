@@ -510,7 +510,7 @@ if not window.requestFileSystem
 		
 		createFilesystem = (size, dataStorage) ->
 			fs = new jsFileSystem dataStorage
-			filesystems.append fs
+			filesystems.push fs
 			fs
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
