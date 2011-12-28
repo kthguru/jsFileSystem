@@ -492,12 +492,11 @@ if not window.requestFileSystem
 			@usedByteCount += byteCount
 			@availByteCount -= byteCount
 			return true
-		
+
+	window.TEMPORARY  = 0
+	window.PERSISTENT = 1
 	
 	class jsLocalFileSystem
-		defStaticReadonly jsLocalFileSystem, 'TEMPORARY' , 0
-		defStaticReadonly jsLocalFileSystem, 'PERSISTENT', 1
-		
 		constructor: () ->
 		filesystems = []
 		
@@ -508,7 +507,7 @@ if not window.requestFileSystem
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		requestFileSystem: (type, size, successCallback, errorCallback) ->
-			if type is not @PERSISTENT
+			if type is not PERSISTENT
 				# TEMPORARY is not supported
 				if errorCallback 
 					func = ->
