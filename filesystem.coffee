@@ -554,22 +554,19 @@ if not window.requestFileSystem
 			callEventLiberal successCallback, []
 
 	class jsFileSystem
-		@maxByteCount   = 0
-		@availByteCount = 0
-		@usedByteCount  = 0
+		@_maxByteCount   = 0
+		@_availByteCount = 0
+		@_usedByteCount  = 0
 		
 		constructor: (type, byte_count, dataStorage) ->
 			@_type = type
-			@maxByteCount = byte_count
-			@availByteCount = @maxByteCount
+			@_maxByteCount = byte_count
+			@_availByteCount = @_maxByteCount
 			
 			Object.defineProperty this, "name", { value : "whatever" }
 			
 			rootEntry = new jsRootDirectoryEntry this, "/", ''
 			Object.defineProperty this, 'root', { get: -> rootEntry }
-			Object.defineProperty this, 'max_byte_count'      , { get: -> @maxByteCount   }
-			Object.defineProperty this, 'available_byte_count', { get: -> @availByteCount }
-			Object.defineProperty this, 'used_byte_count'     , { get: -> @usedByteCount  }
 			
 		reserveBytes: (byteCount) ->
 			
@@ -577,11 +574,11 @@ if not window.requestFileSystem
 				# Assume this is an Entry
 				byteCount = byteCount._byteCount
 			
-			if (@usedByteCount + byteCount) > @maxByteCount
+			if (@_usedByteCount + byteCount) > @_maxByteCount
 				return false
 			
-			@usedByteCount += byteCount
-			@availByteCount -= byteCount
+			@_usedByteCount += byteCount
+			@_availByteCount -= byteCount
 			return true
 
 	window.TEMPORARY  = 0
