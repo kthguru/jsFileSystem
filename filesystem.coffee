@@ -489,9 +489,9 @@ if not window.requestFileSystem
 			
 			rootEntry = new jsRootDirectoryEntry this, "/", ''
 			Object.defineProperty this, 'root', { get: -> rootEntry }
-			Object.defineProperty this, 'max_byte_count'    , { get: -> @maxByteCount }
+			Object.defineProperty this, 'max_byte_count'      , { get: -> @maxByteCount   }
 			Object.defineProperty this, 'available_byte_count', { get: -> @availByteCount }
-			Object.defineProperty this, 'used_byte_count'     , { get: -> @usedByteCount }
+			Object.defineProperty this, 'used_byte_count'     , { get: -> @usedByteCount  }
 			
 		reserveBytes: (byteCount) ->
 			if (@usedByteCount + byteCount) > maxByteCount
