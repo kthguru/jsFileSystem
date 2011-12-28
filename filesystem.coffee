@@ -487,7 +487,10 @@ if not window.requestFileSystem
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getFile: (path, options, successCallback, errorCallback) ->
-		
+			
+			if not path
+				throw new Error "getFile needs path argument"
+			
 			pathList = getPath path
 			entry = this.findEntry pathList
 			
@@ -513,6 +516,10 @@ if not window.requestFileSystem
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getDirectory: (path, options, successCallback, errorCallback) ->
+			
+			if not path
+				throw new Error "getDirectory needs path argument"
+			
 			entry = findPath pathList
 			
 			if entry 
