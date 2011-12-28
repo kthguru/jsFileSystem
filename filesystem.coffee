@@ -96,17 +96,17 @@ if not window.requestFileSystem
 		
 		#DSRequestEmul
 		put: (path, data) ->
-			new DatabaseRequest @objectStore.put data, pathToKey path
+			new jsDatabaseRequest @objectStore.put data, pathToKey path
 
 		#DSRequestEmul
 		get: (path, data) ->
-			new DatabaseRequest @objectStore.get pathToKey path
+			new jsDatabaseRequest @objectStore.get pathToKey path
 
 		clear: () ->
-			new DatabaseRequest @objectStore.clear
+			new jsDatabaseRequest @objectStore.clear
 
 		remove: (path) ->
-			new DatabaseRequest @objectStore.delete pathToKey path
+			new jsDatabaseRequest @objectStore.delete pathToKey path
 	
 	class jsMetadata
 		constructor: () ->
@@ -479,7 +479,7 @@ if not window.requestFileSystem
 			
 			Object.defineProperty this, "name", { value : "whatever" }
 			
-			rootEntry = new RootDirectoryEntry this, "/"
+			rootEntry = new jsRootDirectoryEntry this, "/"
 			Object.defineProperty this, 'root', { get: -> rootEntry }
 			Object.defineProperty this, 'max_byte_count'    , { get: -> @maxByteCount }
 			Object.defineProperty this, 'available_byte_count', { get: -> @availByteCount }
@@ -521,7 +521,7 @@ if not window.requestFileSystem
 				request.onsuccess = ->
 					database = request.result
 					object_store = database.createObjectStore "FileSystem"
-					fs = createFilesystem size, new DatabaseDataStorage object_storage
+					fs = createFilesystem size, new jsDatabaseDataStorage object_storage
 					successCallback.handleEvent fs
 				
 				request.onerror = ->
@@ -529,7 +529,7 @@ if not window.requestFileSystem
 					errorCallback.handleEvent error
 				
 			else if window.localStorage
-				fs = createFilesystem size, new LocalDataStorage window.localStorage
+				fs = createFilesystem size, new jsLocalDataStorage window.localStorage
 				func ->
 					successCallback.handleEvent fs
 				setTimeout func, 0
