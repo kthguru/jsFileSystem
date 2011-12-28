@@ -124,7 +124,29 @@ if not window.requestFileSystem
 	# Following the valid type flags
 	FILE_ENTRY      = 1
 	DIRECTORY_ENTRY = 2
+	SEPERATOR = '/'
+
 	class jsEntry
+		extractName = (path) ->
+			#TODO: Make path parsing more robust
+			
+			if path.length is 0
+				return ''
+			
+			index = path.lastIndexOf '/'
+			
+			if index is -1
+				path = path.trim()
+				return path
+			
+			path = path.trimRight()
+			
+			if index is path.length - 1
+				# No name - path are just directories
+				return ''
+			
+			path.slice index + 1
+		
 		constructor: (parent, name, typeFlag) ->
 			Object.defineProperty this, "parent", { value : parent }
 			
@@ -413,17 +435,68 @@ if not window.requestFileSystem
 		constructor: (parent, name) ->
 			super parent, name, DIRECTORY_ENTRY
 		
-		children: new Object
+		children: []
+		
+		getPath = (path) ->
+			# First simplify parsing
+			path = path.trim().replace(SEPERATOR + '.' + SEPERATOR, SEPERATOR)
+			
+			# Clean up beginning ./
+			index = path.indexOf '.' + SEPERATOR
+			if index is 0
+				path = path.slice 2
+			
+			return path.split SEPERATOR
+		
+		getChildren: (name_entry) ->
+			for child in this.children
+				if child.name is name_entry
+					return child
+			null
+		
+		findEntry: (list) ->
+			
+			currentEntry = this
+			
+			for list_entry in list
+				
+				if list_entry is '..'
+					currentEntry = currentEntry.parent
+				else
+					currentEntry = currentEntry.getChildren list_entry
+				
+				if currentEntry is null
+					return null
+			currentEntry
 		
 		createReader: () ->
 			return new DirectoryReader this
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getFile: (path, options, successCallback, errorCallback) ->
+		
 			pathList = getPath path
-			entry = findPath pathList
-			if not entry instanceof FileEntryEmul
-				setTimeout successCallback.handleEvent entry, 0
+			entry = this.findEntry pathList
+			
+			if entry is null and options.create
+				name = pathList.pop()
+				
+				if pathList.length is 0
+					entry = this
+				else
+					entry = this.findEntry pathList
+				
+				entry = new jsFileEntry entry, name
+				
+			if entry instanceof jsFileEntry
+				func = ->
+					callEventLiberal successCallback, entry
+				setTimeout func, 0
+			else
+				# Assume this is a FileError
+				func = ->
+					callEventLiberal errorCallback, entry
+				setTimeout func, 0
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getDirectory: (path, options, successCallback, errorCallback) ->
