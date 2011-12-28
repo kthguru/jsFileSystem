@@ -506,7 +506,7 @@ if not window.requestFileSystem
 			fs
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
-		requestFileSystem: (type, size, successCallback, errorCallback) ->
+		@requestFileSystem: (type, size, successCallback, errorCallback) ->
 			if type is not PERSISTENT
 				# TEMPORARY is not supported
 				if errorCallback 
