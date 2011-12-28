@@ -149,13 +149,23 @@ if not window.requestFileSystem
 		@_byteCount: 0
 		
 		constructor: (parent, name, typeFlag) ->
-			Object.defineProperty this, "parent", { value : parent }
-			
-			filesystem = parent.filesystem
-			
+
+			if parent.reserveBytes
+				filesystem = parent
+				# According to spec this indicates the root
+				parent     = this
+			else
+				filesystem = parent.filesystem
+				
+			Object.defineProperty this, "parent"    , { value : parent }
 			Object.defineProperty this, "filesystem", { value : filesystem }
 			
-			Object.defineProperty this, "fullPath", { value : parent.fullPath + SEPERATOR + parent.name }
+			if parent is this
+				fullpath = SEPERATOR
+			else
+				fullpath = parent.fullPath + SEPERATOR + parent.name
+			
+			Object.defineProperty this, "fullPath", { value : fullpath }
 			
 			Object.defineProperty this, "name", { value : name }
 			
@@ -536,12 +546,7 @@ if not window.requestFileSystem
 			
 	class jsRootDirectoryEntry extends jsDirectoryEntry
 		constructor: (filesystem, path, name) ->
-			fake_parent = {
-				parent:     this
-				fullPath:   path
-				filesystem: filesystem
-			}
-			super fake_parent, name
+			super filesystem, name
 	
 	class jsDirectoryReader
 		constructor: (dirEntry) ->
