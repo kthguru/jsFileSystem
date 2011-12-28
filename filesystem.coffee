@@ -469,20 +469,42 @@ if not window.requestFileSystem
 			successCallback.handleEvent []
 
 	class jsFileSystem
-		constructor: () ->
+		@maxByteCount   = 0
+		@availByteCount = 0
+		@usedByteCount  = 0
+		
+		constructor: (byte_count, dataStorage) ->
+			@maxByteCount = byte_count
+			@availByteCount = @maxByteCount
+			
 			defineProperty this, "name", { value : "whatever" }
 			
 			rootEntry = new RootDirectoryEntry this, "/"
 			defineProperty this, 'root', { get: -> rootEntry }
+			defineProperty this, 'max_byte_count'    , { get: -> @maxByteCount }
+			defineProperty this, 'available_byte_count', { get: -> @availByteCount }
+			defineProperty this, 'used_byte_count'     , { get: -> @usedByteCount }
+			
+		reserveBytes: (byteCount) ->
+			if (@usedByteCount + byteCount) > maxByteCount
+				return false
+			
+			@usedByteCount += byteCount
+			@availByteCount -= byteCount
+			return true
+		
 	
 	class jsLocalFileSystem
 		defStaticReadonly jsLocalFileSystem, 'TEMPORARY' , 0
 		defStaticReadonly jsLocalFileSystem, 'PERSISTENT', 1
 		
 		constructor: () ->
+		filesystems = []
 		
-		createFilesystem = (dataStorage) ->
-			filesystem: new jsFileSystem dataStorage
+		createFilesystem = (size, dataStorage) ->
+			fs = new jsFileSystem dataStorage
+			filesystems.append fs
+			fs
 		
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		requestFileSystem: (type, size, successCallback, errorCallback) ->
@@ -500,17 +522,17 @@ if not window.requestFileSystem
 				request.onsuccess = ->
 					database = request.result
 					object_store = database.createObjectStore "FileSystem"
-					createFilesystem new DatabaseDataStorage object_storage
-					successCallback.handleEvent @filesystem
+					fs = createFilesystem size, new DatabaseDataStorage object_storage
+					successCallback.handleEvent fs
 				
 				request.onerror = ->
 					error = new FileError FileError.ABORT_ERR ""
 					errorCallback.handleEvent error
 				
 			else if window.localStorage
-				createFilesystem new LocalDataStorage window.localStorage
+				fs = createFilesystem size, new LocalDataStorage window.localStorage
 				func ->
-					successCallback.handleEvent @filesystem
+					successCallback.handleEvent fs
 				setTimeout func, 0
 			else
 				func = ->
