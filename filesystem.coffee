@@ -384,8 +384,8 @@ if not window.requestFileSystem
 			dispatch WRITE_START
 			
 			dispatch DO_WRITE
-
-	class jsFileEntry
+	
+	class jsFileEntry extends jsEntry
 		constructor: () ->
 			super
 			Object.defineProperty this, "isFile", { value : true }
@@ -400,7 +400,7 @@ if not window.requestFileSystem
 			setTimeout '' , 0
 		
 
-	class jsDirectoryEntry
+	class jsDirectoryEntry extends jsEntry
 		constructor: (parent, path) ->
 			super parent, path
 			Object.defineProperty this, "isDirectory", { value : true }
@@ -450,7 +450,7 @@ if not window.requestFileSystem
 		removeRecursively: (successCallback, errorCallback) ->
 			remove successCallback, errorCallback
 			
-	class jsRootDirectoryEntry
+	class jsRootDirectoryEntry extends jsDirectoryEntry
 		constructor: (filesystem, path) ->
 			fake_parent = {
 				parent:     this
