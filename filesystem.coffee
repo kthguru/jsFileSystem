@@ -21,7 +21,16 @@ if not window.requestFileSystem
 				super ''
 			
 			@code = code
-		
+	
+	callEventLiberal = (fnct, arg) ->
+		if fnct.handleEvent is undefined
+			call = () ->
+				fnct arg
+		else
+			call = () ->
+				fnct.handleEvent arg
+		call()
+	
 	defStaticReadonly = (clazz, name, value) ->
 		Object.defineProperty clazz.prototype, name, { value: value }
 		
