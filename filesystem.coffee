@@ -202,7 +202,7 @@ if not window.requestFileSystem
 			
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
-			func ->
+			func = ->
 				if not @metadata
 					@metadata = {
 						modificationTime: @lastFileModificationDate
