@@ -394,7 +394,7 @@ if not window.requestFileSystem
 				# Make progress notifications. On getting, while processing the write method, the length and position attributes should indicate the progress made in writing the file as of the last progress notification
 			
 			@reader.onerror = () ->
-				handleError new FileError ABORT_ERR @reader.error
+				handleError new jsFileError ABORT_ERR, @reader.error
 				
 				# TODO: Not yet implemented:
 				# On getting, the length and position attributes should indicate any fractional data successfully written to the file.
@@ -525,13 +525,13 @@ if not window.requestFileSystem
 			if entry 
 				if options.create and options.exclusive
 					func = ->
-						error = new FileError FileError.ABORT_ERR "File already exists."
+						error = new jsFileError FileError.ABORT_ERR, "File already exists."
 						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
 				else if not options.create and entry.isFile
 					func = ->
-						error = new FileError FileError.ABORT_ERR "Not a Directory but a File."
+						error = new jsFileError FileError.ABORT_ERR, "Not a Directory but a File."
 						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
@@ -540,7 +540,7 @@ if not window.requestFileSystem
 					new DirectoryEntry
 				else
 					func = ->
-						error = new FileError FileError.ABORT_ERR "Directory does not exist."
+						error = new jsFileError FileError.ABORT_ERR, "Directory does not exist."
 						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
@@ -609,7 +609,7 @@ if not window.requestFileSystem
 			if not (type is PERSISTENT or type is TEMPORARY)
 				if errorCallback 
 					func = ->
-						error = new FileError FileError.ABORT_ERR "Wrong type. <" + type + "> is not supported."
+						error = new jsFileError FileError.ABORT_ERR, "Wrong type. <" + type + "> is not supported."
 						callEventLiberal errorCallback, error
 					
 					setTimeout func, 0
@@ -621,7 +621,7 @@ if not window.requestFileSystem
 					callEventLiberal successCallback, fs
 				
 				request.onerror = ->
-					error = new FileError FileError.ABORT_ERR ""
+					error = new jsFileError FileError.ABORT_ERR, ""
 					callEventLiberal errorCallback, error
 				
 			else if window.localStorage
@@ -631,7 +631,7 @@ if not window.requestFileSystem
 				setTimeout func, 0
 			else
 				func = ->
-					error = new FileError FileError.ABORT_ERR "IndexedDB and localStorage are not supported."
+					error = new jsFileError FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
 					callEventLiberal errorCallback, error
 				setTimeout func, 0
 
