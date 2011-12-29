@@ -610,7 +610,7 @@ if not window.requestFileSystem
 		
 		# VoidCallback, optional ErrorCallback
 		removeRecursively: (successCallback, errorCallback) ->
-			remove successCallback, errorCallback
+			this.remove successCallback, errorCallback
 			
 	class jsRootDirectoryEntry extends jsDirectoryEntry
 		constructor: (filesystem, path, name) ->
