@@ -20,6 +20,9 @@ if not window.requestFileSystem
 				super ''
 			
 			@code = code
+		
+		valueOf: () ->
+			@code
 	
 	callEventLiberal = (fnct, arg) ->
 		if fnct.handleEvent is undefined
