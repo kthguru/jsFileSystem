@@ -614,8 +614,11 @@ if not window.requestFileSystem
 		
 		# EntriesCallback, optional ErrorCallback 
 		readEntries: (successCallback, errorCallback) ->
-			callEventLiberal successCallback, @dirEntry.children
-			callEventLiberal successCallback, []
+			obj = this
+			func = ->
+				callEventLiberal successCallback, obj.dirEntry.children
+				callEventLiberal successCallback, []
+			callLaterOn func
 
 	class jsFileSystem
 		@_maxByteCount   = 0
