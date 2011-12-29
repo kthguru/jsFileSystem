@@ -470,7 +470,7 @@ if not window.requestFileSystem
 		
 		children: []
 		
-		getPath = (path) ->
+		foldPath: (path) ->
 			# First simplify parsing
 			path = path.trim().replace(SEPERATOR + '.' + SEPERATOR, SEPERATOR)
 			
@@ -479,7 +479,7 @@ if not window.requestFileSystem
 			if index is 0
 				path = path.slice 2
 			
-			return path.split SEPERATOR
+			path
 		
 		getChildren: (name_entry) ->
 			for child in this.children
@@ -487,9 +487,7 @@ if not window.requestFileSystem
 					return child
 			null
 		
-		findEntry: (list) ->
-			
-			currentEntry = this
+		@findEntry: (currentEntry, list) ->
 			
 			for list_entry in list
 				
@@ -503,7 +501,7 @@ if not window.requestFileSystem
 			currentEntry
 		
 		createReader: () ->
-			return new DirectoryReader this
+			return new jsDirectoryReader this
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getFile: (path, options, successCallback, errorCallback) ->
@@ -511,28 +509,44 @@ if not window.requestFileSystem
 			if not path
 				throw new Error "getFile needs path argument"
 			
-			pathList = getPath path
-			entry = this.findEntry pathList
+			path = this.foldPath path
+			index = path.indexOf SEPERATOR
+			isAbsolute = index is 0
+			if isAbsolute
+				currentEntry = this.filesystem.root
+			else
+				currentEntry = this
+			
+			path = path.split SEPERATOR
+			
+			entry = jsDirectoryEntry.findEntry currentEntry, path
 			
 			if entry is null and options.create
-				name = pathList.pop()
+				name = path.pop()
 				
-				if pathList.length is 0
+				if path.length is 0
 					entry = this
 				else
-					entry = this.findEntry pathList
+					entry = jsDirectoryEntry.findEntry currentEntry, path
 				
 				entry = new jsFileEntry entry, name
 				
-			if entry instanceof jsFileEntry
+			if not (entry is null) and entry.isFile
 				func = ->
 					callEventLiberal successCallback, entry
-				setTimeout func, 0
+				setTimeout func
+				return
+			
+			if entry is null
+				error = new FileError FileError.NOT_FOUND_ERR, "File was not found"
+			else if entry.isDirectory
+				error = new FileError FileError.TYPE_MISMATCH_ERR, "Trying to get directory as a file"
 			else
-				# Assume this is a FileError
-				func = ->
-					callEventLiberal errorCallback, entry
-				setTimeout func, 0
+				error = new FileError FileError.ABORT_ERR, "Unkown error"
+			
+			func = ->
+				callEventLiberal errorCallback, error
+			setTimeout func
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getDirectory: (path, options, successCallback, errorCallback) ->
@@ -540,7 +554,18 @@ if not window.requestFileSystem
 			if not path
 				throw new Error "getDirectory needs path argument"
 			
-			entry = findPath pathList
+			path = this.foldPath path
+			
+			index = path.indexOf SEPERATOR
+			isAbsolute = index is 0
+			if isAbsolute
+				currentEntry = this.filesystem.root
+			else
+				currentEntry = this
+			
+			path = path.split SEPERATOR
+			
+			entry = jsDirectoryEntry.findEntry currentEntry, path
 			
 			if entry 
 				if options.create and options.exclusive
@@ -556,16 +581,21 @@ if not window.requestFileSystem
 					setTimeout func, 0
 					return
 			else
-				if options.create
-					new DirectoryEntry
-				else
+				if not options.create
 					func = ->
 						error = new FileError FileError.NOT_FOUND_ERR, "Directory does not exist."
 						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
 			
-			return entry
+			#Every error case should be checked now
+			func = ->
+				if not entry
+					name = path.pop()
+					path = jsDirectoryEntry.findEntry currentEntry, path
+					entry = new jsDirectoryEntry path, name
+				callEventLiberal successCallback, entry
+			setTimeout func, 0
 		
 		# VoidCallback, optional ErrorCallback
 		removeRecursively: (successCallback, errorCallback) ->
