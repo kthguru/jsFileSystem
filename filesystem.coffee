@@ -183,7 +183,9 @@ if not window.requestFileSystem
 			Object.defineProperty this, "filesystem", { value : filesystem }
 			Object.defineProperty this, "name", { value : name }
 			
-			if parent is this
+			#TODO: Move isRoot handling off - it's ugly design
+			isRoot = parent is this
+			if isRoot
 				fullpath = ""
 			else
 				fullpath = parent.fullPath + SEPERATOR + parent.name
@@ -199,6 +201,9 @@ if not window.requestFileSystem
 			@lastFileModificationDate = undefined
 			
 			filesystem.reserveBytes this
+			
+			if not isRoot
+				parent.children.push this
 			
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
