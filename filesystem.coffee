@@ -679,7 +679,7 @@ if not window.requestFileSystem
 					callLaterOn func
 			
 			else if window.indexedDB
-				request = window.indexedDB.open "___jsLocalFileSystem___"
+				request = window.indexedDB.open "filesystem.js_"
 				request.onsuccess = ->
 					fs = createFilesystem type, size, new jsDatabaseDataStorage request.result
 					callEventLiberal successCallback, fs
