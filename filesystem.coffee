@@ -46,13 +46,29 @@ if not window.requestFileSystem
 	defStaticReadonly jsFileException, 'SYNTAX_ERR'                 ,  8
 	defStaticReadonly jsFileException, 'QUOTA_EXCEEDED_ERR'         , 10
 	
-	class jsFileError extends jsFileException
-		constructor: (code, secondary) ->
-			super code, secondary
-		
-	defStaticReadonly jsFileError, 'INVALID_MODIFICATION_ERR',  9
-	defStaticReadonly jsFileError, 'TYPE_MISMATCH_ERR'       , 11
-	defStaticReadonly jsFileError, 'PATH_EXISTS_ERR'         , 12
+	# Check whether there is already a FileError available from
+	# FileWriter
+	if not FileError 
+		class FileError extends jsFileException
+			constructor: (code, secondary) ->
+				super code, secondary
+	
+	defErrorCode = (name, value) ->
+		if not FileError[name]
+			Object.defineProperty FileError, name, { value: value }
+	
+	defErrorCode 'NOT_FOUND_ERR'              ,  1
+	defErrorCode 'SECURITY_ERR'               ,  2
+	defErrorCode 'ABORT_ERR'                  ,  3
+	defErrorCode 'NOT_READABLE_ERR'           ,  4
+	defErrorCode 'ENCODING_ERR'               ,  5
+	defErrorCode 'NO_MODIFICATION_ALLOWED_ERR',  6
+	defErrorCode 'INVALID_STATE_ERR'          ,  7
+	defErrorCode 'SYNTAX_ERR'                 ,  8
+	defErrorCode 'INVALID_MODIFICATION_ERR'   ,  9
+	defErrorCode 'QUOTA_EXCEEDED_ERR'         , 10
+	defErrorCode 'TYPE_MISMATCH_ERR'          , 11
+	defErrorCode 'PATH_EXISTS_ERR'            , 12
 	
 	class jsRequest
 	
@@ -398,7 +414,7 @@ if not window.requestFileSystem
 				# Make progress notifications. On getting, while processing the write method, the length and position attributes should indicate the progress made in writing the file as of the last progress notification
 			
 			@reader.onerror = () ->
-				handleError new jsFileError ABORT_ERR, @reader.error
+				handleError new FileError FileError.ABORT_ERR, @reader.error
 				
 				# TODO: Not yet implemented:
 				# On getting, the length and position attributes should indicate any fractional data successfully written to the file.
@@ -407,7 +423,7 @@ if not window.requestFileSystem
 		
 		seek: (offset) -> #raises (FileException)
 			if @readyState is WRITING
-				throw new FileException INVALID_STATE_ERR
+				throw new jsFileException jsFileException.INVALID_STATE_ERR
 			
 			if offset > @length
 				offset = @length
@@ -424,7 +440,7 @@ if not window.requestFileSystem
 			#if size is @_data.length
 				
 			if @readyState is WRITING
-				throw new FileException INVALID_STATE_ERR
+				throw new jsFileException jsFileException.INVALID_STATE_ERR
 			
 			@_readyState = WRITING
 			
@@ -529,13 +545,13 @@ if not window.requestFileSystem
 			if entry 
 				if options.create and options.exclusive
 					func = ->
-						error = new jsFileError FileError.ABORT_ERR, "File already exists."
+						error = new FileError FileError.ABORT_ERR, "File already exists."
 						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
 				else if not options.create and entry.isFile
 					func = ->
-						error = new jsFileError FileError.ABORT_ERR, "Not a Directory but a File."
+						error = new FileError FileError.TYPE_MISMATCH_ERR, "Not a Directory but a File."
 						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
@@ -544,7 +560,7 @@ if not window.requestFileSystem
 					new DirectoryEntry
 				else
 					func = ->
-						error = new jsFileError FileError.ABORT_ERR, "Directory does not exist."
+						error = new FileError FileError.NOT_FOUND_ERR, "Directory does not exist."
 						callEventLiberal errorCallback, error
 					setTimeout func, 0
 					return
@@ -613,7 +629,7 @@ if not window.requestFileSystem
 			if not (type is PERSISTENT or type is TEMPORARY)
 				if errorCallback 
 					func = ->
-						error = new jsFileError FileError.ABORT_ERR, "Wrong type. <" + type + "> is not supported."
+						error = new FileError FileError.ABORT_ERR, "Wrong type. <" + type + "> is not supported."
 						callEventLiberal errorCallback, error
 					
 					setTimeout func, 0
@@ -625,7 +641,7 @@ if not window.requestFileSystem
 					callEventLiberal successCallback, fs
 				
 				request.onerror = ->
-					error = new jsFileError FileError.ABORT_ERR, ""
+					error = new FileError FileError.ABORT_ERR, ""
 					callEventLiberal errorCallback, error
 				
 			else if window.localStorage
@@ -635,7 +651,7 @@ if not window.requestFileSystem
 				setTimeout func, 0
 			else
 				func = ->
-					error = new jsFileError FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
+					error = new FileError FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
 					callEventLiberal errorCallback, error
 				setTimeout func, 0
 
