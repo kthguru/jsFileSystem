@@ -33,6 +33,9 @@ if not window.requestFileSystem
 				fnct.handleEvent arg
 		call()
 	
+	callLaterOn = (func) ->
+		setTimeout func, 0
+	
 	defStaticReadonly = (clazz, name, value) ->
 		Object.defineProperty clazz.prototype, name, { value: value }
 		
@@ -205,7 +208,7 @@ if not window.requestFileSystem
 						modificationTime: @lastFileModificationDate
 					}
 				callEventLiberal successCallback, @metadata
-			setTimeout func, 0
+			callLaterOn func
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
 		moveTo: (parent, newName, successCallback, errorCallback) ->
@@ -457,11 +460,11 @@ if not window.requestFileSystem
 			writer = new FileWriter
 			func = ->
 				callEventLiberal successCallback, writer
-			setTimeout func, 0
+			callLaterOn func
 		
 		# FileCallback, optional ErrorCallback
 		file: (successCallback, errorCallback) ->
-			setTimeout '' , 0
+			callLaterOn ''
 		
 
 	class jsDirectoryEntry extends jsEntry
@@ -534,7 +537,7 @@ if not window.requestFileSystem
 			if not (entry is null) and entry.isFile
 				func = ->
 					callEventLiberal successCallback, entry
-				setTimeout func
+				callLaterOn func
 				return
 			
 			if entry is null
@@ -546,7 +549,7 @@ if not window.requestFileSystem
 			
 			func = ->
 				callEventLiberal errorCallback, error
-			setTimeout func
+			callLaterOn func
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
 		getDirectory: (path, options, successCallback, errorCallback) ->
@@ -572,20 +575,20 @@ if not window.requestFileSystem
 					func = ->
 						error = new FileError FileError.ABORT_ERR, "File already exists."
 						callEventLiberal errorCallback, error
-					setTimeout func, 0
+					callLaterOn func
 					return
 				else if not options.create and entry.isFile
 					func = ->
 						error = new FileError FileError.TYPE_MISMATCH_ERR, "Not a Directory but a File."
 						callEventLiberal errorCallback, error
-					setTimeout func, 0
+					callLaterOn func, 0
 					return
 			else
 				if not options.create
 					func = ->
 						error = new FileError FileError.NOT_FOUND_ERR, "Directory does not exist."
 						callEventLiberal errorCallback, error
-					setTimeout func, 0
+					callLaterOn func
 					return
 			
 			#Every error case should be checked now
@@ -595,7 +598,7 @@ if not window.requestFileSystem
 					path = jsDirectoryEntry.findEntry currentEntry, path
 					entry = new jsDirectoryEntry path, name
 				callEventLiberal successCallback, entry
-			setTimeout func, 0
+			callLaterOn func
 		
 		# VoidCallback, optional ErrorCallback
 		removeRecursively: (successCallback, errorCallback) ->
@@ -662,7 +665,7 @@ if not window.requestFileSystem
 						error = new FileError FileError.ABORT_ERR, "Wrong type. <" + type + "> is not supported."
 						callEventLiberal errorCallback, error
 					
-					setTimeout func, 0
+					callLaterOn func
 			
 			else if window.indexedDB
 				request = window.indexedDB.open "___jsLocalFileSystem___"
@@ -678,12 +681,12 @@ if not window.requestFileSystem
 				fs = createFilesystem type, size, new jsLocalDataStorage window.localStorage
 				func = ->
 					callEventLiberal successCallback, fs
-				setTimeout func, 0
+				callLaterOn func
 			else
 				func = ->
 					error = new FileError FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
 					callEventLiberal errorCallback, error
-				setTimeout func, 0
+				callLaterOn func
 
 	window.requestFileSystem = jsLocalFileSystem.requestFileSystem
 	window.useFileSystemEmulation = true
