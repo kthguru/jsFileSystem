@@ -225,15 +225,18 @@ if not window.requestFileSystem
 		
 		# VoidCallback, optional ErrorCallback
 		remove: (successCallback, errorCallback) ->
+			obj = this
 			func = (entry) ->
-				removedEntry = delete entry.children[@name]
+				removedEntry = delete entry.children[obj]
 				callEventLiberal successCallback, removedEntry
 				
-			getParent func, errorCallback
+			this.getParent func, errorCallback
 		
 		# EntryCallback, optional ErrorCallback
 		getParent: (successCallback, errorCallback) ->
-			@parent
+			func = ->
+				callEventLiberal successCallback, @parent
+			callLaterOn func
 	
 	class jsBlob
 		data: []
