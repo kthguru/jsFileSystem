@@ -159,15 +159,16 @@ if not window.requestFileSystem
 				
 			Object.defineProperty this, "parent"    , { value : parent }
 			Object.defineProperty this, "filesystem", { value : filesystem }
+			Object.defineProperty this, "name", { value : name }
 			
 			if parent is this
-				fullpath = SEPERATOR
+				fullpath = ""
 			else
 				fullpath = parent.fullPath + SEPERATOR + parent.name
 			
-			Object.defineProperty this, "fullPath", { value : fullpath }
+			fullpath += SEPERATOR + @name
 			
-			Object.defineProperty this, "name", { value : name }
+			Object.defineProperty this, "fullPath", { value : fullpath }
 			
 			Object.defineProperty this, "isFile"     , { value : typeFlag is FILE_ENTRY }
 			Object.defineProperty this, "isDirectory", { value : typeFlag is DIRECTORY_ENTRY }
