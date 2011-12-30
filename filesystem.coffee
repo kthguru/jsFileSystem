@@ -229,8 +229,9 @@ if not window.requestFileSystem
 		remove: (successCallback, errorCallback) ->
 			obj = this
 			func = (entry) ->
-				removedEntry = delete entry.children[obj]
-				callEventLiberal successCallback, removedEntry
+				index = entry.children.indexOf obj
+				entry.children.splice index, 1
+				callEventLiberal successCallback, obj
 				
 			this.getParent func, errorCallback
 		
