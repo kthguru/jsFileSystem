@@ -170,7 +170,7 @@ if not window.requestFileSystem
 		
 		@_byteCount: 0
 		
-		constructor: (parent, name, typeFlag) ->
+		constructor: (parent, name, typeFlag, addToParent) ->
 
 			if parent.reserveBytes
 				filesystem = parent
@@ -202,9 +202,9 @@ if not window.requestFileSystem
 			
 			filesystem.reserveBytes this
 			
-			if not isRoot
-				parent.children.push this
-			
+			if addToParent
+				@parent.children.push this
+		
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
 			func = ->
@@ -461,7 +461,7 @@ if not window.requestFileSystem
 	
 	class jsFileEntry extends jsEntry
 		constructor: (parent, name) ->
-			super parent, name, FILE_ENTRY
+			super parent, name, FILE_ENTRY, true
 		
 		# FileWriterCallback, optional ErrorCallback
 		createWriter: (successCallback, errorCallback) ->
@@ -477,7 +477,7 @@ if not window.requestFileSystem
 
 	class jsDirectoryEntry extends jsEntry
 		constructor: (parent, name) ->
-			super parent, name, DIRECTORY_ENTRY
+			super parent, name, DIRECTORY_ENTRY, true
 		
 		children: []
 		
@@ -614,8 +614,8 @@ if not window.requestFileSystem
 			
 	class jsRootDirectoryEntry extends jsDirectoryEntry
 		constructor: (filesystem, path, name) ->
-			super filesystem, name
-	
+			super filesystem, name, false
+		
 	class jsDirectoryReader
 		constructor: (dirEntry) ->
 			Object.defineProperty this, "dirEntry", {value : dirEntry }
