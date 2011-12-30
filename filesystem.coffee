@@ -234,8 +234,9 @@ if not window.requestFileSystem
 		
 		# EntryCallback, optional ErrorCallback
 		getParent: (successCallback, errorCallback) ->
+			obj = this
 			func = ->
-				callEventLiberal successCallback, @parent
+				callEventLiberal successCallback, obj.parent
 			callLaterOn func
 	
 	class jsBlob
