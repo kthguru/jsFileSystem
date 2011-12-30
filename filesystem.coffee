@@ -186,11 +186,13 @@ if not window.requestFileSystem
 			#TODO: Move isRoot handling off - it's ugly design
 			isRoot = parent is this
 			if isRoot
-				fullpath = ""
+				fullpath = SEPERATOR
+			else if parent.name is ''
+				fullpath = parent.fullPath
 			else
-				fullpath = parent.fullPath + SEPERATOR + parent.name
+				fullpath = parent.fullPath + SEPERATOR
 			
-			fullpath += SEPERATOR + @name
+			fullpath += @name
 			
 			Object.defineProperty this, "fullPath", { value : fullpath }
 			
