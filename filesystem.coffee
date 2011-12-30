@@ -522,43 +522,40 @@ if not window.requestFileSystem
 			
 			if not path
 				throw new Error "getFile needs path argument"
-			
-			path = this.foldPath path
-			index = path.indexOf SEPERATOR
-			isAbsolute = index is 0
-			if isAbsolute
-				currentEntry = this.filesystem.root
-			else
-				currentEntry = this
-			
-			path = path.split SEPERATOR
-			
-			entry = jsDirectoryEntry.findEntry currentEntry, path
-			
-			if entry is null and options.create
-				name = path.pop()
-				
-				if path.length is 0
-					entry = this
-				else
-					entry = jsDirectoryEntry.findEntry currentEntry, path
-				
-				entry = new jsFileEntry entry, name
-				
-			if not (entry is null) and entry.isFile
-				func = ->
-					callEventLiberal successCallback, entry
-				callLaterOn func
-				return
-			
-			if entry is null
-				error = new FileError FileError.NOT_FOUND_ERR, "File was not found"
-			else if entry.isDirectory
-				error = new FileError FileError.TYPE_MISMATCH_ERR, "Trying to get directory as a file"
-			else
-				error = new FileError FileError.ABORT_ERR, "Unkown error"
-			
+			obj = this
 			func = ->
+				path = obj.foldPath path
+				path = path.split SEPERATOR
+				
+				if path[0] is ''
+					path = path.splice 1
+					currentEntry = obj.filesystem.root
+				else
+					currentEntry = obj
+				
+				entry = jsDirectoryEntry.findEntry currentEntry, path
+				
+				if entry is null and options.create
+					name = path.pop()
+					
+					if path.length is 0
+						entry = obj
+					else
+						entry = jsDirectoryEntry.findEntry currentEntry, path
+					
+					entry = new jsFileEntry entry, name
+				
+				if not (entry is null) and entry.isFile
+					callEventLiberal successCallback, entry
+					return
+			
+				if entry is null
+					error = new FileError FileError.NOT_FOUND_ERR, "File was not found"
+				else if entry.isDirectory
+					error = new FileError FileError.TYPE_MISMATCH_ERR, "Trying to get directory as a file"
+				else
+					error = new FileError FileError.ABORT_ERR, "Unkown error"
+				
 				callEventLiberal errorCallback, error
 			callLaterOn func
 		
@@ -567,47 +564,38 @@ if not window.requestFileSystem
 			
 			if not path
 				throw new Error "getDirectory needs path argument"
+			obj = this
+			func = ->
+				path = obj.foldPath path
+				path = path.split SEPERATOR
+				
+				if path[0] is ''
+					path = path.splice 1
+					currentEntry = obj.filesystem.root
+				else
+					currentEntry = obj
+				
+				entry = jsDirectoryEntry.findEntry currentEntry, path
 			
-			path = this.foldPath path
-			
-			index = path.indexOf SEPERATOR
-			isAbsolute = index is 0
-			if isAbsolute
-				currentEntry = this.filesystem.root
-			else
-				currentEntry = this
-			
-			path = path.split SEPERATOR
-			
-			entry = jsDirectoryEntry.findEntry currentEntry, path
-			
-			if entry 
-				if options.create and options.exclusive
-					func = ->
+				if entry 
+					if options.create and options.exclusive
 						error = new FileError FileError.ABORT_ERR, "File already exists."
 						callEventLiberal errorCallback, error
-					callLaterOn func
-					return
-				else if not options.create and entry.isFile
-					func = ->
+						return
+					else if entry.isFile
 						error = new FileError FileError.TYPE_MISMATCH_ERR, "Not a Directory but a File."
 						callEventLiberal errorCallback, error
-					callLaterOn func, 0
-					return
-			else
-				if not options.create
-					func = ->
+						return
+				else 
+					if not options.create
 						error = new FileError FileError.NOT_FOUND_ERR, "Directory does not exist."
 						callEventLiberal errorCallback, error
-					callLaterOn func
-					return
-			
-			#Every error case should be checked now
-			func = ->
-				if not entry
+						return
+				
 					name = path.pop()
 					path = jsDirectoryEntry.findEntry currentEntry, path
 					entry = new jsDirectoryEntry path, name
+				
 				callEventLiberal successCallback, entry
 			callLaterOn func
 		
