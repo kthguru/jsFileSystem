@@ -611,12 +611,17 @@ if not window.requestFileSystem
 		constructor: (dirEntry) ->
 			Object.defineProperty this, "dirEntry", {value : dirEntry }
 		
+		@_allRead: false
+		
 		# EntriesCallback, optional ErrorCallback 
 		readEntries: (successCallback, errorCallback) ->
 			obj = this
 			func = ->
-				callEventLiberal successCallback, obj.dirEntry.children
-				callEventLiberal successCallback, []
+				if obj._allRead
+					callEventLiberal successCallback, []
+				else
+					obj._allRead = true;
+					callEventLiberal successCallback, obj.dirEntry.children
 			callLaterOn func
 
 	class jsFileSystem
