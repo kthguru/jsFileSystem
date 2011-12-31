@@ -51,14 +51,16 @@ if not window.requestFileSystem
 	
 	# Check whether there is already a FileError available from
 	# FileWriter
-	if not FileError 
-		class FileError extends jsFileException
-			constructor: (code, secondary) ->
-				super code, secondary
+	class FileError extends jsFileException
+		constructor: (code, secondary) ->
+			super code, secondary
+	
+	if not window.FileError
+		window.FileError = FileError
 	
 	defErrorCode = (name, value) ->
-		if not FileError[name]
-			Object.defineProperty FileError, name, { value: value }
+		if not window.FileError[name]
+			Object.defineProperty window.FileError, name, { value: value }
 	
 	defErrorCode 'NOT_FOUND_ERR'              ,  1
 	defErrorCode 'SECURITY_ERR'               ,  2
@@ -72,6 +74,9 @@ if not window.requestFileSystem
 	defErrorCode 'QUOTA_EXCEEDED_ERR'         , 10
 	defErrorCode 'TYPE_MISMATCH_ERR'          , 11
 	defErrorCode 'PATH_EXISTS_ERR'            , 12
+	
+	createFileError = (code, second) ->
+		new FileError code, second
 	
 	class jsRequest
 	
@@ -431,7 +436,7 @@ if not window.requestFileSystem
 				# Make progress notifications. On getting, while processing the write method, the length and position attributes should indicate the progress made in writing the file as of the last progress notification
 			
 			@reader.onerror = () ->
-				handleError new FileError FileError.ABORT_ERR, @reader.error
+				handleError createFileError window.FileError.ABORT_ERR, @reader.error
 				
 				# TODO: Not yet implemented:
 				# On getting, the length and position attributes should indicate any fractional data successfully written to the file.
@@ -553,12 +558,16 @@ if not window.requestFileSystem
 					return
 			
 				if entry is null
-					error = new FileError FileError.NOT_FOUND_ERR, "File was not found"
+					code = window.FileError.NOT_FOUND_ERR
+					message = "File was not found"
 				else if entry.isDirectory
-					error = new FileError FileError.TYPE_MISMATCH_ERR, "Trying to get directory as a file"
+					code = window.FileError.TYPE_MISMATCH_ERR
+					message = "Trying to get directory as a file"
 				else
-					error = new FileError FileError.ABORT_ERR, "Unkown error"
+					code = window.FileError.ABORT_ERR
+					message = "Unkown error"
 				
+				error = createFileError code, message
 				callEventLiberal errorCallback, error
 			callLaterOn func
 		
@@ -582,16 +591,16 @@ if not window.requestFileSystem
 			
 				if entry 
 					if options.create and options.exclusive
-						error = new FileError FileError.ABORT_ERR, "File already exists."
+						error = createFileError window.FileError.ABORT_ERR, "File already exists."
 						callEventLiberal errorCallback, error
 						return
 					else if entry.isFile
-						error = new FileError FileError.TYPE_MISMATCH_ERR, "Not a Directory but a File."
+						error = createFileError window.FileError.TYPE_MISMATCH_ERR, "Not a Directory but a File."
 						callEventLiberal errorCallback, error
 						return
 				else 
 					if not options.create
-						error = new FileError FileError.NOT_FOUND_ERR, "Directory does not exist."
+						error = createFileError window.FileError.NOT_FOUND_ERR, "Directory does not exist."
 						callEventLiberal errorCallback, error
 						return
 					
@@ -607,7 +616,7 @@ if not window.requestFileSystem
 			if this.children.length is 0
 				super successCallback, errorCallback
 				return
-			callEventLiberal errorCallback, new FileError FileError.INVALID_MODIFICATION_ERR, "Removing directory containing children not allowed."
+			callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Removing directory containing children not allowed."
 		removeRecursivelySync: (successCallback, errorCallback) ->
 			this.children.length = 0
 			this.removeSync successCallback, errorCallback
@@ -624,7 +633,7 @@ if not window.requestFileSystem
 			super filesystem, name
 		
 		removeSync: (successCallback, errorCallback) ->
-			callEventLiberal errorCallback, new FileError FileError.INVALID_MODIFICATION_ERR, "Removing root directory not allowed."
+			callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Removing root directory not allowed."
 		
 		removeRecursivelySync: (successCallback, errorCallback) ->
 			# Reuse error handling in removeSync
@@ -692,7 +701,7 @@ if not window.requestFileSystem
 			if not (type is PERSISTENT or type is TEMPORARY)
 				if errorCallback 
 					func = ->
-						error = new FileError FileError.ABORT_ERR, "Wrong type. <" + type + "> is not supported."
+						error = createFileError window.FileError.ABORT_ERR, "Wrong type. <" + type + "> is not supported."
 						callEventLiberal errorCallback, error
 					
 					callLaterOn func
@@ -704,7 +713,7 @@ if not window.requestFileSystem
 					callEventLiberal successCallback, fs
 				
 				request.onerror = ->
-					error = new FileError FileError.ABORT_ERR, ""
+					error = createFileError window.FileError.ABORT_ERR, ""
 					callEventLiberal errorCallback, error
 				
 			else if window.localStorage
@@ -714,7 +723,7 @@ if not window.requestFileSystem
 				callLaterOn func
 			else
 				func = ->
-					error = new FileError FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
+					error = createFileError window.FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
 					callEventLiberal errorCallback, error
 				callLaterOn func
 
