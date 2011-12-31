@@ -165,9 +165,10 @@ if not window.requestFileSystem
 			else
 				filesystem = parent.filesystem
 			@_parent = parent
+			@_name   = name
 			Object.defineProperty this, "parent"    , { get: -> @_parent }
 			Object.defineProperty this, "filesystem", { value : filesystem }
-			Object.defineProperty this, "name", { value : name }
+			Object.defineProperty this, "name"      , { get: -> @_name }
 			
 			#TODO: Move isRoot handling off - it's ugly design
 			isRoot = @parent is this
