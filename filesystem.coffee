@@ -518,7 +518,7 @@ if not window.requestFileSystem
 				path = path.split SEPERATOR
 				
 				if path[0] is ''
-					path = path.splice 1
+					path.splice 0, 1
 					currentEntry = obj.filesystem.root
 				else
 					currentEntry = obj
@@ -532,7 +532,6 @@ if not window.requestFileSystem
 						entry = obj
 					else
 						entry = jsDirectoryEntry.findEntry currentEntry, path
-					
 						
 					if entry
 						entry = new jsFileEntry entry, name
@@ -571,13 +570,13 @@ if not window.requestFileSystem
 				path = path.split SEPERATOR
 				
 				if path[0] is ''
-					path = path.splice 1
+					path.splice 0, 1
 					currentEntry = obj.filesystem.root
 				else
 					currentEntry = obj
 				
 				entry = jsDirectoryEntry.findEntry currentEntry, path
-			
+				
 				if entry 
 					if options.create and options.exclusive
 						error = createFileError window.FileError.ABORT_ERR, "File already exists."
