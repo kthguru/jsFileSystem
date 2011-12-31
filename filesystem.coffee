@@ -170,7 +170,7 @@ if not window.requestFileSystem
 		
 		@_byteCount: 0
 		
-		constructor: (parent, name, typeFlag, addToParent) ->
+		constructor: (parent, name, typeFlag) ->
 
 			if parent.reserveBytes
 				filesystem = parent
@@ -184,7 +184,7 @@ if not window.requestFileSystem
 			Object.defineProperty this, "name", { value : name }
 			
 			#TODO: Move isRoot handling off - it's ugly design
-			isRoot = parent is this
+			isRoot = @parent is this
 			if isRoot
 				fullpath = SEPERATOR
 			else if parent.name is ''
@@ -204,7 +204,7 @@ if not window.requestFileSystem
 			
 			filesystem.reserveBytes this
 			
-			if addToParent
+			if not isRoot
 				@parent.children.push this
 		
 		# MetadataCallback, optional ErrorCallback
@@ -465,7 +465,7 @@ if not window.requestFileSystem
 	
 	class jsFileEntry extends jsEntry
 		constructor: (parent, name) ->
-			super parent, name, FILE_ENTRY, true
+			super parent, name, FILE_ENTRY
 		
 		# FileWriterCallback, optional ErrorCallback
 		createWriter: (successCallback, errorCallback) ->
@@ -481,7 +481,7 @@ if not window.requestFileSystem
 
 	class jsDirectoryEntry extends jsEntry
 		constructor: (parent, name) ->
-			super parent, name, DIRECTORY_ENTRY, true
+			super parent, name, DIRECTORY_ENTRY
 		
 		children: []
 		
@@ -606,7 +606,7 @@ if not window.requestFileSystem
 			
 	class jsRootDirectoryEntry extends jsDirectoryEntry
 		constructor: (filesystem, path, name) ->
-			super filesystem, name, false
+			super filesystem, name
 		
 	class jsDirectoryReader
 		constructor: (dirEntry) ->
