@@ -145,7 +145,8 @@ if not window.requestFileSystem
 	
 	class jsMetadata
 		constructor: () ->
-			Object.defineProperty this, "modificationTime", { value : undefined }
+			@_modificationTime = new Date()
+			Object.defineProperty this, "modificationTime", { get: -> @_modificationTime }
 
 	# Following the valid type flags
 	FILE_ENTRY      = 1
