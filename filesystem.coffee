@@ -468,9 +468,8 @@ if not window.requestFileSystem
 
 	class jsDirectoryEntry extends jsEntry
 		constructor: (parent, name) ->
+			@children = []
 			super parent, name, DIRECTORY_ENTRY
-		
-		children: []
 		
 		foldPath: (path) ->
 			# First simplify parsing
