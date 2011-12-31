@@ -646,6 +646,8 @@ if not window.requestFileSystem
 					callEventLiberal successCallback, []
 				else
 					obj._allRead = true;
+					# Return copy so we can be sure that children are not modified
+					# by invoker
 					callEventLiberal successCallback, obj.dirEntry.children.slice 0
 			callLaterOn func
 
