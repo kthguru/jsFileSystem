@@ -193,6 +193,19 @@ if not window.requestFileSystem
 			if not isRoot
 				@parent.children.push this
 		
+		@findEntry: (currentEntry, list) ->
+			
+			for list_entry in list
+				
+				if list_entry is '..'
+					currentEntry = currentEntry.parent
+				else
+					currentEntry = currentEntry.getChildren list_entry
+				
+				if currentEntry is null
+					return null
+			currentEntry
+		
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
 			obj = this
@@ -491,19 +504,6 @@ if not window.requestFileSystem
 				if child.name is name_entry
 					return child
 			null
-		
-		@findEntry: (currentEntry, list) ->
-			
-			for list_entry in list
-				
-				if list_entry is '..'
-					currentEntry = currentEntry.parent
-				else
-					currentEntry = currentEntry.getChildren list_entry
-				
-				if currentEntry is null
-					return null
-			currentEntry
 		
 		createReader: () ->
 			return new jsDirectoryReader this
