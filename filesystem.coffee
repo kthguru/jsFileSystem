@@ -259,10 +259,10 @@ if not window.requestFileSystem
 					if obj.isFile is newEntry.isDirectory
 						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory by file."
 						return
-					else if obj.isDirectory and newEntry.isFile
+					if obj.isDirectory and newEntry.isFile
 						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace file by directory."
 						return
-					else if newEntry.isDirectory and not(newEntry.children.length is 0)
+					if newEntry.isDirectory and not(newEntry.children.length is 0)
 						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory containing children."
 						return
 					
