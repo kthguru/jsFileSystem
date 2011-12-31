@@ -164,8 +164,9 @@ if not window.requestFileSystem
 				parent     = this
 			else
 				filesystem = parent.filesystem
+			@_parent = parent
+			Object.defineProperty this, "parent"    , { get: -> @_parent }
 				
-			Object.defineProperty this, "parent"    , { value : parent }
 			Object.defineProperty this, "filesystem", { value : filesystem }
 			Object.defineProperty this, "name", { value : name }
 			
@@ -214,6 +215,7 @@ if not window.requestFileSystem
 		removeSync: (successCallback, errorCallback) ->
 			index = @parent.children.indexOf this
 			@parent.children.splice index, 1
+			@_parent = null
 			callEventLiberal successCallback, this
 		
 		# VoidCallback, optional ErrorCallback
