@@ -193,6 +193,9 @@ if not window.requestFileSystem
 			if not isRoot
 				@parent.children.push this
 		
+		clone: (entry) ->
+			entry._metadata =  @_metadata
+		
 		@findEntry: (currentEntry, list) ->
 			
 			for list_entry in list
@@ -277,7 +280,45 @@ if not window.requestFileSystem
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
 		copyTo: (parent, newName, successCallback, errorCallback) ->
-
+			obj = this
+			func = ->
+				if not obj.parent
+					callEventLiberal errorCallback, createRemovedError()
+					return
+				
+				if not parent.parent
+					callEventLiberal errorCallback, createRemovedError "New parent was removed."
+					return
+				
+				newName = newName || obj.name
+				
+				if obj.parent is parent and obj.name is newName
+					callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy Entry on itself."
+					return
+				
+				if jsEntry._isParent obj, parent
+					callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy Entry on children."
+					return
+					
+				newEntry = jsEntry.findEntry parent, [ newName ]
+				
+				if newEntry
+					if obj.isFile is newEntry.isDirectory
+						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy directory onto file."
+						return
+					if obj.isDirectory and newEntry.isFile
+						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy file onto directory."
+						return
+					if newEntry.isDirectory and not(newEntry.children.length is 0)
+						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory containing children."
+						return
+					
+					newEntry._deleteFromParent()
+				
+				obj.clone parent, newName
+				callEventLiberal successCallback, obj
+			callLaterOn func
+			
 		toURL: (mimeType) ->
 		
 		_deleteFromParent: () ->
@@ -525,6 +566,11 @@ if not window.requestFileSystem
 		constructor: (parent, name) ->
 			super parent, name, FILE_ENTRY
 		
+		clone: (parent, name) ->
+			entry = new jsFileEntry parent, name
+			super entry
+			entry
+		
 		# FileWriterCallback, optional ErrorCallback
 		createWriter: (successCallback, errorCallback) ->
 			writer = new FileWriter
@@ -546,6 +592,17 @@ if not window.requestFileSystem
 		constructor: (parent, name) ->
 			@children = []
 			super parent, name, DIRECTORY_ENTRY
+		
+		_cloneChildrenRecursively: (clonedEntry) ->
+			for child in @children
+				clonedEntry.children.push child.clone clonedEntry, child.name
+			
+		
+		clone: (parent, name) ->
+			entry = new jsDirectoryEntry parent, name
+			super entry
+			this._cloneChildrenRecursively entry
+			entry
 		
 		foldPath: (path) ->
 			# First simplify parsing
