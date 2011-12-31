@@ -467,6 +467,9 @@ if not window.requestFileSystem
 		
 	createNoParentError = ->
 		createFileError window.FileError.NOT_FOUND_ERR, "Parent directory does not exist."
+		
+	createExclusiveError = ->
+		createFileError window.FileError.INVALID_MODIFICATION_ERR, "File already exists."
 
 	class jsDirectoryEntry extends jsEntry
 		constructor: (parent, name) ->
@@ -525,18 +528,23 @@ if not window.requestFileSystem
 				
 				entry = jsDirectoryEntry.findEntry currentEntry, path
 				
-				if entry is null and options.create
-					name = path.pop()
+				if options.create
+					if entry is null
+						name = path.pop()
+				
+						if path.length is 0
+							entry = obj
+						else
+							entry = jsDirectoryEntry.findEntry currentEntry, path
 					
-					if path.length is 0
-						entry = obj
-					else
-						entry = jsDirectoryEntry.findEntry currentEntry, path
-						
-					if entry
-						entry = new jsFileEntry entry, name
-					else
-						error = createNoParentError()
+						if entry
+							entry = new jsFileEntry entry, name
+						else
+							error = createNoParentError()
+							callEventLiberal errorCallback, error
+							return
+					else if options.exclusive
+						error = createExclusiveError()
 						callEventLiberal errorCallback, error
 						return
 				
@@ -579,7 +587,7 @@ if not window.requestFileSystem
 				
 				if entry 
 					if options.create and options.exclusive
-						error = createFileError window.FileError.ABORT_ERR, "File already exists."
+						error = createExclusiveError()
 						callEventLiberal errorCallback, error
 						return
 					else if entry.isFile
