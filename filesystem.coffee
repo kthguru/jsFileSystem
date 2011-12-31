@@ -225,15 +225,17 @@ if not window.requestFileSystem
 
 		toURL: (mimeType) ->
 		
+		removeSync: (successCallback, errorCallback) ->
+			index = @parent.children.indexOf this
+			@parent.children.splice index, 1
+			callEventLiberal successCallback, this
+		
 		# VoidCallback, optional ErrorCallback
 		remove: (successCallback, errorCallback) ->
 			obj = this
-			func = (entry) ->
-				index = entry.children.indexOf obj
-				entry.children.splice index, 1
-				callEventLiberal successCallback, obj
-				
-			this.getParent func, errorCallback
+			func = ->
+				obj.removeSync successCallback, errorCallback
+			callLaterOn func
 		
 		# EntryCallback, optional ErrorCallback
 		getParent: (successCallback, errorCallback) ->
@@ -592,7 +594,7 @@ if not window.requestFileSystem
 						error = new FileError FileError.NOT_FOUND_ERR, "Directory does not exist."
 						callEventLiberal errorCallback, error
 						return
-				
+					
 					name = path.pop()
 					path = jsDirectoryEntry.findEntry currentEntry, path
 					entry = new jsDirectoryEntry path, name
@@ -600,13 +602,33 @@ if not window.requestFileSystem
 				callEventLiberal successCallback, entry
 			callLaterOn func
 		
+		removeSync: (successCallback, errorCallback) ->
+			# According to spec removing with children is not allowed
+			if this.children.length is 0
+				super successCallback, errorCallback
+				return
+			callEventLiberal errorCallback, new FileError FileError.INVALID_MODIFICATION_ERR, "Removing directory containing children not allowed."
+		removeRecursivelySync: (successCallback, errorCallback) ->
+			this.children.length = 0
+			this.removeSync successCallback, errorCallback
+		
 		# VoidCallback, optional ErrorCallback
 		removeRecursively: (successCallback, errorCallback) ->
-			this.remove successCallback, errorCallback
+			obj = this
+			func = ->
+				obj.removeRecursivelySync successCallback, errorCallback
+			callLaterOn func
 			
 	class jsRootDirectoryEntry extends jsDirectoryEntry
 		constructor: (filesystem, path, name) ->
 			super filesystem, name
+		
+		removeSync: (successCallback, errorCallback) ->
+			callEventLiberal errorCallback, new FileError FileError.INVALID_MODIFICATION_ERR, "Removing root directory not allowed."
+		
+		removeRecursivelySync: (successCallback, errorCallback) ->
+			# Reuse error handling in removeSync
+			this.removeSync successCallback, errorCallback
 		
 	class jsDirectoryReader
 		constructor: (dirEntry) ->
@@ -622,7 +644,7 @@ if not window.requestFileSystem
 					callEventLiberal successCallback, []
 				else
 					obj._allRead = true;
-					callEventLiberal successCallback, obj.dirEntry.children
+					callEventLiberal successCallback, obj.dirEntry.children.slice 0
 			callLaterOn func
 
 	class jsFileSystem
