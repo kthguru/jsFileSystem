@@ -153,26 +153,6 @@ if not window.requestFileSystem
 	SEPERATOR = '/'
 
 	class jsEntry
-		extractName = (path) ->
-			#TODO: Make path parsing more robust
-			
-			if path.length is 0
-				return ''
-			
-			index = path.lastIndexOf '/'
-			
-			if index is -1
-				path = path.trim()
-				return path
-			
-			path = path.trimRight()
-			
-			if index is path.length - 1
-				# No name - path are just directories
-				return ''
-			
-			path.slice index + 1
-		
 		@_byteCount: 0
 		
 		constructor: (parent, name, typeFlag) ->
