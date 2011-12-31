@@ -166,7 +166,6 @@ if not window.requestFileSystem
 				filesystem = parent.filesystem
 			@_parent = parent
 			Object.defineProperty this, "parent"    , { get: -> @_parent }
-				
 			Object.defineProperty this, "filesystem", { value : filesystem }
 			Object.defineProperty this, "name", { value : name }
 			
@@ -186,8 +185,7 @@ if not window.requestFileSystem
 			Object.defineProperty this, "isFile"     , { value : typeFlag is FILE_ENTRY }
 			Object.defineProperty this, "isDirectory", { value : typeFlag is DIRECTORY_ENTRY }
 			
-			@metadata = null
-			@lastFileModificationDate = undefined
+			@_metadata = new jsMetadata()
 			
 			filesystem.reserveBytes this
 			
@@ -196,12 +194,12 @@ if not window.requestFileSystem
 		
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
+			obj = this
 			func = ->
-				if not @metadata
-					@metadata = {
-						modificationTime: @lastFileModificationDate
-					}
-				callEventLiberal successCallback, @metadata
+				if obj.parent
+					callEventLiberal successCallback, obj._metadata
+				else
+					callEventLiberal errorCallback, createFileError window.FileError.NOT_FOUND_ERR, "File was removed."
 			callLaterOn func
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
@@ -236,11 +234,8 @@ if not window.requestFileSystem
 		data: []
 		
 	class jsFile extends jsBlob
-		@_lastModifiedDate: null
-		
 		constructor: (name) ->
 			Object.defineProperty this, "name", {value : name }
-			Object.defineProperty this, "lastModifiedDate", { get: -> @_lastModifiedDate } 
 		
 	class jsFileSaver
 		defStaticReadonly jsFileSaver, 'WRITE_START', 'FileSaverWriteStart'
