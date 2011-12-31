@@ -465,6 +465,8 @@ if not window.requestFileSystem
 		file: (successCallback, errorCallback) ->
 			callLaterOn ''
 		
+	createNoParentError = ->
+		createFileError window.FileError.NOT_FOUND_ERR, "Parent directory does not exist."
 
 	class jsDirectoryEntry extends jsEntry
 		constructor: (parent, name) ->
@@ -530,7 +532,13 @@ if not window.requestFileSystem
 					else
 						entry = jsDirectoryEntry.findEntry currentEntry, path
 					
-					entry = new jsFileEntry entry, name
+						
+					if entry
+						entry = new jsFileEntry entry, name
+					else
+						error = createNoParentError()
+						callEventLiberal errorCallback, error
+						return
 				
 				if not (entry is null) and entry.isFile
 					callEventLiberal successCallback, entry
@@ -584,8 +592,14 @@ if not window.requestFileSystem
 						return
 					
 					name = path.pop()
-					path = jsDirectoryEntry.findEntry currentEntry, path
-					entry = new jsDirectoryEntry path, name
+					entry = jsDirectoryEntry.findEntry currentEntry, path
+					
+					if entry
+						entry = new jsDirectoryEntry entry, name
+					else
+						error = createNoParentError()
+						callEventLiberal errorCallback, error
+						return
 				
 				callEventLiberal successCallback, entry
 			callLaterOn func
