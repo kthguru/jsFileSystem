@@ -206,6 +206,10 @@ if not window.requestFileSystem
 					return null
 			currentEntry
 		
+		createRemovedError = (message) ->
+			message = message || "Entry was removed."
+			createFileError window.FileError.NOT_FOUND_ERR, message
+		
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
 			obj = this
@@ -213,21 +217,76 @@ if not window.requestFileSystem
 				if obj.parent
 					callEventLiberal successCallback, obj._metadata
 				else
-					callEventLiberal errorCallback, createFileError window.FileError.NOT_FOUND_ERR, "File was removed."
+					callEventLiberal errorCallback, createRemovedError()
 			callLaterOn func
+		
+		@_isParent: (parent, testEntry) ->
+			result = false
+			testParent = () ->
+				testEntry = testEntry.parent
+				if testEntry is parent
+					result = true
+					testEntry = testEntry.filesystem.root
+			
+			testParent() while not(testEntry.filesystem.root is testEntry)
+			result
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
 		moveTo: (parent, newName, successCallback, errorCallback) ->
+			obj = this
+			func = ->
+				if not obj.parent
+					callEventLiberal errorCallback, createRemovedError()
+					return
+				
+				if not parent.parent
+					callEventLiberal errorCallback, createRemovedError "New parent was removed."
+					return
+				
+				newName = newName || obj.name
+				
+				if obj.parent is parent and obj.name is newName
+					callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot move entry on itself."
+					return
+				
+				if jsEntry._isParent obj, parent
+					callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot move entry on children."
+					return
+					
+				newEntry = jsEntry.findEntry parent, [ newName ]
+				
+				if newEntry
+					if obj.isFile is newEntry.isDirectory
+						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory by file."
+						return
+					else if obj.isDirectory and newEntry.isFile
+						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace file by directory."
+						return
+					else if newEntry.isDirectory and not(newEntry.children.length is 0)
+						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory containing children."
+						return
+					
+					newEntry._deleteFromParent()
+				
+				obj._deleteFromParent()
+				obj._parent = parent
+				obj._name = newName
+				obj.parent.children.push obj
+				callEventLiberal successCallback, obj
+			callLaterOn func
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
 		copyTo: (parent, newName, successCallback, errorCallback) ->
 
 		toURL: (mimeType) ->
 		
-		removeSync: (successCallback, errorCallback) ->
+		_deleteFromParent: () ->
 			index = @parent.children.indexOf this
 			@parent.children.splice index, 1
 			@_parent = null
+		
+		removeSync: (successCallback, errorCallback) ->
+			this._deleteFromParent()
 			callEventLiberal successCallback, this
 		
 		# VoidCallback, optional ErrorCallback
