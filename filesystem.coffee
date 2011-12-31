@@ -512,6 +512,7 @@ if not window.requestFileSystem
 			if not path
 				throw new Error "getFile needs path argument"
 			obj = this
+			options = options || {} #Make sure we always have options
 			func = ->
 				path = obj.foldPath path
 				path = path.split SEPERATOR
@@ -564,6 +565,7 @@ if not window.requestFileSystem
 			if not path
 				throw new Error "getDirectory needs path argument"
 			obj = this
+			options = options || {} #Make sure we always have options
 			func = ->
 				path = obj.foldPath path
 				path = path.split SEPERATOR
