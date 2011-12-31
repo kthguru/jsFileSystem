@@ -225,11 +225,14 @@ if not window.requestFileSystem
 		
 		@_isParent: (parent, testEntry) ->
 			result = false
+			parentEntry = parent
 			testParent = () ->
 				testEntry = testEntry.parent
-				if testEntry is parent
+				if testEntry is parentEntry
 					result = true
-					testEntry = testEntry.filesystem.root
+					parentEntry = parentEntry.parent
+				else
+					parentEntry = parent
 			
 			testParent() while not(testEntry.filesystem.root is testEntry)
 			result
