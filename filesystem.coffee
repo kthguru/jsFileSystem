@@ -235,8 +235,13 @@ if not window.requestFileSystem
 			callEventLiberal errorCallback, createRemovedError message
 		
 		validateRemoved = (object, errorCallback, message) ->
-			if not object.parent
-				callRemovedError errorCallback, message
+			if object.parent
+				return false
+			
+			message = message || "Entry was removed."
+			error = createFileError window.FileError.NOT_FOUND_ERR, message
+			callEventLiberal errorCallback, error
+			true
 		
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
