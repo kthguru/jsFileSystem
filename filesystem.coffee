@@ -349,6 +349,8 @@ if not window.requestFileSystem
 		toURL: (mimeType) ->
 		
 		_deleteFromParent: () ->
+			if not @parent
+				return # Seems like is was already unparented
 			index = @parent.children.indexOf this
 			@parent.children.splice index, 1
 			@_parent = null
