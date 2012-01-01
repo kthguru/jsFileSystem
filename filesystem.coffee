@@ -247,10 +247,8 @@ if not window.requestFileSystem
 		getMetadata: (successCallback, errorCallback) ->
 			obj = this
 			func = ->
-				if obj.parent
+				if not validateRemoved obj, errorCallback
 					callEventLiberal successCallback, obj._metadata
-				else
-					callEventLiberal errorCallback, createRemovedError()
 			callLaterOn func
 		
 		@_isParent: (parent, testEntry) ->
