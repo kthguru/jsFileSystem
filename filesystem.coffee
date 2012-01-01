@@ -347,6 +347,14 @@ if not window.requestFileSystem
 			callLaterOn func
 			
 		toURL: (mimeType) ->
+			result = "filesystem:file:///"
+			
+			switch @filesystem._type
+				when window.PERSISTENT
+					result += "persistent"
+				when window.TEMPORARY
+					result += "temporary"
+			result += @fullPath
 		
 		_deleteFromParent: () ->
 			if not @parent
