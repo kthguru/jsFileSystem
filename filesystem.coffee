@@ -895,7 +895,36 @@ if not window.requestFileSystem
 					error = createFileError window.FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
 					callEventLiberal errorCallback, error
 				callLaterOn func
+		
+		failUrl = (errorCallback) ->
+			func = ->
+				error = createFileError window.FileError.SYNTAX_ERR, "Could not interpret url."
+				callEventLiberal errorCallback, error
+			callLaterOn func
+			
+		urlRegex = `/^filesystem:file:///(persistent|temporary)//`
+		@resolveLocalFileSystemURL: (url, successCallback, errorCallback) ->
+			if not url
+				throw new Error "resolveLocalFileSystemURL needs a url argument."
+			
+			func = ->
+				if not urlRegex.test url
+					return failUrl errorCallback
+			
+				array = url.split ":///", 3
+			
+				type = window.PERSISTENT
+				size = 100 # need function to get last size
+			
+				try
+					filesystem = jsLocalFileSystemSync.requestFileSystem type, size
+					entry = filesystem.root.getEntry
+					callEventLiberal successCallback, entry
+				catch e
+					callEventLiberal errorCallback, e
+			callLaterOn func
 
 	window.requestFileSystem = jsLocalFileSystem.requestFileSystem
+	window.resolveLocalFileSystemURL = jsLocalFileSystem.resolveLocalFileSystemURL
 	window.useFileSystemEmulation = true
 
