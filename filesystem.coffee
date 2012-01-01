@@ -872,13 +872,9 @@ if not window.requestFileSystem
 		# unsigned short, unsigned long long, FileSystemCallback, optional ErrorCallback
 		@requestFileSystem: (type, size, successCallback, errorCallback) ->
 			if not (type is PERSISTENT or type is TEMPORARY)
-				if errorCallback 
-					func = ->
-						error = createFileError window.FileError.ABORT_ERR, "Wrong type. <" + type + "> is not supported."
-						callEventLiberal errorCallback, error
-					
-					callLaterOn func
-			
+				throw new Error "Wrong type. <" + type + "> is not supported."
+			else if not size
+				throw new Error "requestFileSystem needs size argument."
 			else if window.indexedDB
 				request = window.indexedDB.open "filesystem.js_"
 				request.onsuccess = ->
