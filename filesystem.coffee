@@ -333,14 +333,15 @@ if not window.requestFileSystem
 				newEntry = jsEntry.findEntry parent, [ newName ]
 				
 				if newEntry
+					err = window.FileError.INVALID_MODIFICATION_ERR
 					if obj.isFile is newEntry.isDirectory
-						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy directory onto file."
+						callEventLiberal errorCallback, createFileError err, "Cannot copy directory onto file."
 						return
 					if obj.isDirectory and newEntry.isFile
-						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy file onto directory."
+						callEventLiberal errorCallback, createFileError err, "Cannot copy file onto directory."
 						return
 					if newEntry.isDirectory and not(newEntry.children.length is 0)
-						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory containing children."
+						callEventLiberal errorCallback, createFileError err, "Cannot replace directory containing children."
 						return
 					
 					newEntry._deleteFromParent()
