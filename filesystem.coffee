@@ -381,12 +381,16 @@ if not window.requestFileSystem
 				callEventLiberal successCallback, obj.parent
 			callLaterOn func
 	
-	class jsBlob
-		data: []
-		
-	class jsFile extends jsBlob
-		constructor: (name) ->
-			Object.defineProperty this, "name", {value : name }
+	class jsFile
+		constructor: (@_entry, @_blobBuilder) ->
+			@_blob = @_blobBuilder.getBlob()
+			Object.defineProperty this, "name", { get: -> @_entry.name }
+			Object.defineProperty this, "lastModifiedDate", { get: -> @_entry.lastModifiedDate }
+			Object.defineProperty this, "size", { get: -> @_blob.size }
+			Object.defineProperty this, "type", { value: "text/plain" }
+			
+		slice: (start, end, contentType) ->
+			@_blob.slice start, end, contentType
 		
 	class jsFileSaver
 		defStaticReadonly jsFileSaver, 'WRITE_START', 'FileSaverWriteStart'
@@ -617,7 +621,12 @@ if not window.requestFileSystem
 		
 		# FileCallback, optional ErrorCallback
 		file: (successCallback, errorCallback) ->
-			callLaterOn ''
+			thisEntry = this
+			func = ->
+				builder = new window.BlobBuilder
+				file = new jsFile thisEntry, builder
+				callEventLiberal successCallback, file
+			callLaterOn func
 		
 	createNoParentError = ->
 		createFileError window.FileError.NOT_FOUND_ERR, "Parent directory does not exist."
