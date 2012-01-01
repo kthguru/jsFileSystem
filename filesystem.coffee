@@ -637,7 +637,7 @@ if not window.requestFileSystem
 		
 		foldPath: (path) ->
 			# First simplify parsing
-			path = path.trim().replace(SEPERATOR + '.' + SEPERATOR, SEPERATOR)
+			path = path.replace(SEPERATOR + '.' + SEPERATOR, SEPERATOR)
 			
 			# Clean up beginning ./
 			index = path.indexOf '.' + SEPERATOR
