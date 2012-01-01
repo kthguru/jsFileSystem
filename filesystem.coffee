@@ -256,7 +256,7 @@ if not window.requestFileSystem
 					parentEntry = parent
 			
 			testParent() while not(testEntry.filesystem.root is testEntry)
-			result
+			result and parentEntry is testEntry.filesystem.root
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
 		moveTo: (parent, newName, successCallback, errorCallback) ->
