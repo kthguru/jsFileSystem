@@ -147,6 +147,24 @@ if not window.requestFileSystem
 		constructor: () ->
 			@_modificationTime = new Date()
 			Object.defineProperty this, "modificationTime", { get: -> @_modificationTime }
+	
+	callInvalidNameError = (errorCallback) ->
+		callEventLiberal errorCallback, createFileError window.FileError.SYNTAX_ERR, "Wrong characters in name"
+	
+	charRegex = `/([/\\]+|\.$| $)/`
+	# According to spec
+	#charRegex = new RegExp '([/\\<>:?*\"|]+|\\.$| $)'
+		
+	validateName = (errorCallback, name) ->
+		if not name 
+			return true
+		#if not charRegex.test name
+		result = charRegex.test name
+		if not result
+			return true
+		
+		callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Name contains invalid characters."
+		false
 
 	# Following the valid type flags
 	FILE_ENTRY      = 1
@@ -213,6 +231,13 @@ if not window.requestFileSystem
 			message = message || "Entry was removed."
 			createFileError window.FileError.NOT_FOUND_ERR, message
 		
+		callRemovedError = (errorCallback, message) ->
+			callEventLiberal errorCallback, createRemovedError message
+		
+		validateRemoved = (object, errorCallback, message) ->
+			if not object.parent
+				callRemovedError errorCallback, message
+		
 		# MetadataCallback, optional ErrorCallback
 		getMetadata: (successCallback, errorCallback) ->
 			obj = this
@@ -241,12 +266,13 @@ if not window.requestFileSystem
 		moveTo: (parent, newName, successCallback, errorCallback) ->
 			obj = this
 			func = ->
-				if not obj.parent
-					callEventLiberal errorCallback, createRemovedError()
+				if validateRemoved obj, errorCallback
 					return
 				
-				if not parent.parent
-					callEventLiberal errorCallback, createRemovedError "New parent was removed."
+				if validateRemoved parent, errorCallback, "New parent was removed."
+					return
+				
+				if not validateName errorCallback, newName
 					return
 				
 				newName = newName || obj.name
@@ -285,12 +311,13 @@ if not window.requestFileSystem
 		copyTo: (parent, newName, successCallback, errorCallback) ->
 			obj = this
 			func = ->
-				if not obj.parent
-					callEventLiberal errorCallback, createRemovedError()
+				if validateRemoved obj, errorCallback
 					return
 				
-				if not parent.parent
-					callEventLiberal errorCallback, createRemovedError "New parent was removed."
+				if validateRemoved parent, errorCallback, "New parent was removed."
+					return
+				
+				if not validateName errorCallback, newName
 					return
 				
 				newName = newName || obj.name
@@ -644,6 +671,10 @@ if not window.requestFileSystem
 				else
 					currentEntry = obj
 				
+				for subpath in path
+					if not validateName errorCallback, subpath
+						return
+				
 				entry = jsDirectoryEntry.findEntry currentEntry, path
 				
 				if options.create
@@ -700,6 +731,10 @@ if not window.requestFileSystem
 					currentEntry = obj.filesystem.root
 				else
 					currentEntry = obj
+				
+				for subpath in path
+					if not validateName errorCallback, subpath
+						return
 				
 				entry = jsDirectoryEntry.findEntry currentEntry, path
 				
