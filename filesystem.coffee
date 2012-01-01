@@ -227,13 +227,6 @@ if not window.requestFileSystem
 					return null
 			currentEntry
 		
-		createRemovedError = (message) ->
-			message = message || "Entry was removed."
-			createFileError window.FileError.NOT_FOUND_ERR, message
-		
-		callRemovedError = (errorCallback, message) ->
-			callEventLiberal errorCallback, createRemovedError message
-		
 		validateRemoved = (object, errorCallback, message) ->
 			if object.parent
 				return false
