@@ -875,6 +875,8 @@ if not window.requestFileSystem
 				throw new Error "Wrong type. <" + type + "> is not supported."
 			else if not size
 				throw new Error "requestFileSystem needs size argument."
+			else if not successCallback
+				throw new Error "requestFileSystem needs successCallback argument."
 			else if window.indexedDB
 				request = window.indexedDB.open "filesystem.js_"
 				request.onsuccess = ->
