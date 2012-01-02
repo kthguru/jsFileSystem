@@ -906,7 +906,7 @@ if not window.requestFileSystem
 			
 		urlRegex = `/^filesystem:file:///(persistent|temporary)//`
 		@resolveLocalFileSystemURL: (url, successCallback, errorCallback) ->
-			if not url
+			if url is null or url is undefined
 				throw new Error "resolveLocalFileSystemURL needs a url argument."
 			
 			func = ->
