@@ -155,27 +155,43 @@ if not window.requestFileSystem
 	# According to spec
 	#charRegex = new RegExp '([/\\<>:?*\"|]+|\\.$| $)'
 		
-	validateName = (errorCallback, name) ->
-		if not name 
-			return true
+	validateName = (name) ->
+		if not name
+			return
 		#if not charRegex.test name
 		result = charRegex.test name
 		if not result
-			return true
+			return
 		
-		callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Name contains invalid characters."
-		false
+		throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Name contains invalid characters."
+	
+
 
 	# Following the valid type flags
 	FILE_ENTRY      = 1
 	DIRECTORY_ENTRY = 2
 	SEPERATOR = '/'
 
-	class jsEntry
-		@_byteCount: 0
+	class jsBase
+		callAsync: (func, successCallback, errorCallback) ->
+			func = func.bind this
+			
+			callLaterOn ->
+				result
+				try
+					result = func()
+				catch e
+					# Just catch our FileExceptions	
+					if e.code
+						callEventLiberal errorCallback, e
+						return
+					throw e
 		
+				callEventLiberal successCallback, result
+	
+	class jsEntry extends jsBase
 		constructor: (parent, name, typeFlag) ->
-
+			@_byteCount = 0
 			if parent.reserveBytes
 				filesystem = parent
 				# According to spec this indicates the root
@@ -210,6 +226,13 @@ if not window.requestFileSystem
 			
 			if not isRoot
 				@parent.children.push this
+			
+			@copyTo      = @_copyToAsync
+			@getParent   = @_getParentAsync
+			@getMetadata = @_getMetadataAsync
+			@moveTo      = @_moveToAsync
+			@remove      = @_removeAsync
+			
 		
 		clone: (entry) ->
 			entry._metadata =  @_metadata
@@ -227,22 +250,22 @@ if not window.requestFileSystem
 					return null
 			currentEntry
 		
-		validateRemoved = (object, errorCallback, message) ->
+		validateRemoved = (object, message) ->
 			if object.parent
-				return false
+				return
 			
 			message = message || "Entry was removed."
-			error = createFileError window.FileError.NOT_FOUND_ERR, message
-			callEventLiberal errorCallback, error
-			true
+			throw createFileError window.FileError.NOT_FOUND_ERR, message
+		
+		_getMetadataSync: ->
+			validateRemoved this
+			@_metadata
 		
 		# MetadataCallback, optional ErrorCallback
-		getMetadata: (successCallback, errorCallback) ->
-			obj = this
+		_getMetadataAsync: (successCallback, errorCallback) ->
 			func = ->
-				if not validateRemoved obj, errorCallback
-					callEventLiberal successCallback, obj._metadata
-			callLaterOn func
+				@_getMetadataSync()
+			@callAsync func, successCallback, errorCallback
 		
 		@_isParent: (parent, testEntry) ->
 			result = false
@@ -258,94 +281,77 @@ if not window.requestFileSystem
 			testParent() while not(testEntry.filesystem.root is testEntry)
 			result and parentEntry is testEntry.filesystem.root
 		
+		_moveToSync: (newParent, newName) ->
+			validateRemoved this
+			validateRemoved newParent, "New parent was removed."
+			validateName newName
+				
+			newName = newName || @name
+			
+			if @parent is newParent and @name is newName
+				throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot move entry on itself."
+			
+			if jsEntry._isParent this, newParent
+				throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot move entry on children."
+				
+			newEntry = jsEntry.findEntry newParent, [ newName ]
+			
+			if newEntry
+				if @isFile is newEntry.isDirectory
+					throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory by file."
+				if @isDirectory and newEntry.isFile
+					throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace file by directory."
+				if newEntry.isDirectory and not(newEntry.children.length is 0)
+					throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory containing children."
+				
+				newEntry._deleteFromParent()
+			
+			@_deleteFromParent()
+			@_parent = newParent
+			@_name   = newName
+			@parent.children.push this
+			this
+		
+		_copyToSync: (newParent, newName) ->
+			validateRemoved this
+			validateRemoved newParent, "New parent was removed."
+			validateName newName
+			
+			newName = newName || @name
+			
+			if @parent is newParent and @name is newName
+				throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy Entry on itself."
+			
+			if jsEntry._isParent this, newParent
+				throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy Entry on children."
+			
+			newEntry = jsEntry.findEntry newParent, [ newName ]
+			
+			if newEntry
+				err = window.FileError.INVALID_MODIFICATION_ERR
+				if @isFile is newEntry.isDirectory
+					throw createFileError err, "Cannot copy directory onto file."
+				if @isDirectory and newEntry.isFile
+					throw createFileError err, "Cannot copy file onto directory."
+				if newEntry.isDirectory and not(newEntry.children.length is 0)
+					throw createFileError err, "Cannot replace directory containing children."
+				
+				newEntry._deleteFromParent()
+			
+			@clone newParent, newName
+			
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
-		moveTo: (parent, newName, successCallback, errorCallback) ->
-			obj = this
+		_moveToAsync: (parent, newName, successCallback, errorCallback) ->
 			func = ->
-				if validateRemoved obj, errorCallback
-					return
-				
-				if validateRemoved parent, errorCallback, "New parent was removed."
-					return
-				
-				if not validateName errorCallback, newName
-					return
-				
-				newName = newName || obj.name
-				
-				if obj.parent is parent and obj.name is newName
-					callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot move entry on itself."
-					return
-				
-				if jsEntry._isParent obj, parent
-					callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot move entry on children."
-					return
-					
-				newEntry = jsEntry.findEntry parent, [ newName ]
-				
-				if newEntry
-					if obj.isFile is newEntry.isDirectory
-						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory by file."
-						return
-					if obj.isDirectory and newEntry.isFile
-						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace file by directory."
-						return
-					if newEntry.isDirectory and not(newEntry.children.length is 0)
-						callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot replace directory containing children."
-						return
-					
-					newEntry._deleteFromParent()
-				
-				obj._deleteFromParent()
-				obj._parent = parent
-				obj._name = newName
-				obj.parent.children.push obj
-				callEventLiberal successCallback, obj
-			callLaterOn func
+				@_moveToSync parent, newName
+			@callAsync func, successCallback, errorCallback
 		
 		# DirectoryEntry, optional DOMString, optional EntryCallback, optional ErrorCallback
-		copyTo: (parent, newName, successCallback, errorCallback) ->
-			obj = this
+		_copyToAsync: (parent, newName, successCallback, errorCallback) ->
 			func = ->
-				if validateRemoved obj, errorCallback
-					return
-				
-				if validateRemoved parent, errorCallback, "New parent was removed."
-					return
-				
-				if not validateName errorCallback, newName
-					return
-				
-				newName = newName || obj.name
-				
-				if obj.parent is parent and obj.name is newName
-					callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy Entry on itself."
-					return
-				
-				if jsEntry._isParent obj, parent
-					callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Cannot copy Entry on children."
-					return
-					
-				newEntry = jsEntry.findEntry parent, [ newName ]
-				
-				if newEntry
-					err = window.FileError.INVALID_MODIFICATION_ERR
-					if obj.isFile is newEntry.isDirectory
-						callEventLiberal errorCallback, createFileError err, "Cannot copy directory onto file."
-						return
-					if obj.isDirectory and newEntry.isFile
-						callEventLiberal errorCallback, createFileError err, "Cannot copy file onto directory."
-						return
-					if newEntry.isDirectory and not(newEntry.children.length is 0)
-						callEventLiberal errorCallback, createFileError err, "Cannot replace directory containing children."
-						return
-					
-					newEntry._deleteFromParent()
-				
-				obj.clone parent, newName
-				callEventLiberal successCallback, obj
-			callLaterOn func
-			
+				@_copyToSync parent, newName
+			@callAsync func, successCallback, errorCallback
+		
 		toURL: (mimeType) ->
 			result = "filesystem:file:///"
 			
@@ -356,30 +362,30 @@ if not window.requestFileSystem
 					result += "temporary"
 			result += @fullPath
 		
-		_deleteFromParent: () ->
+		_deleteFromParent: ->
 			if not @parent
 				return # Seems like is was already unparented
 			index = @parent.children.indexOf this
 			@parent.children.splice index, 1
 			@_parent = null
 		
-		removeSync: (successCallback, errorCallback) ->
-			this._deleteFromParent()
-			callEventLiberal successCallback, this
+		_removeSync: ->
+			@_deleteFromParent()
 		
 		# VoidCallback, optional ErrorCallback
-		remove: (successCallback, errorCallback) ->
-			obj = this
+		_removeAsync: (successCallback, errorCallback) ->
 			func = ->
-				obj.removeSync successCallback, errorCallback
-			callLaterOn func
+				@_removeSync()
+			@callAsync func, successCallback, errorCallback
+		
+		_getParentSync: ->
+			@parent
 		
 		# EntryCallback, optional ErrorCallback
-		getParent: (successCallback, errorCallback) ->
-			obj = this
+		_getParentAsync: (successCallback, errorCallback) ->
 			func = ->
-				callEventLiberal successCallback, obj.parent
-			callLaterOn func
+				@_getParentSync()
+			@callAsync func, successCallback, errorCallback
 	
 	class jsFile
 		constructor: (@_entry, @_blobBuilder) ->
@@ -606,27 +612,32 @@ if not window.requestFileSystem
 	class jsFileEntry extends jsEntry
 		constructor: (parent, name) ->
 			super parent, name, FILE_ENTRY
+			@file         = @_fileAsync
+			@createWriter = @_createWriterAsync
 		
 		clone: (parent, name) ->
 			entry = new jsFileEntry parent, name
 			super entry
 			entry
 		
+		_createWriterSync: ->
+			new FileWriter this
+		
 		# FileWriterCallback, optional ErrorCallback
-		createWriter: (successCallback, errorCallback) ->
-			writer = new FileWriter
+		_createWriterAsync: (successCallback, errorCallback) ->
 			func = ->
-				callEventLiberal successCallback, writer
-			callLaterOn func
+				@createWriterSync
+			@callAsync func, successCallback, errorCallback
+		
+		_fileSync: ->
+			builder = new window.BlobBuilder
+			new jsFile this, builder
 		
 		# FileCallback, optional ErrorCallback
-		file: (successCallback, errorCallback) ->
-			thisEntry = this
+		_fileAsync: (successCallback, errorCallback) ->
 			func = ->
-				builder = new window.BlobBuilder
-				file = new jsFile thisEntry, builder
-				callEventLiberal successCallback, file
-			callLaterOn func
+				@_fileSync()
+			@callAsync func, successCallback, errorCallback
 		
 	createNoParentError = ->
 		createFileError window.FileError.NOT_FOUND_ERR, "Parent directory does not exist."
@@ -638,6 +649,9 @@ if not window.requestFileSystem
 		constructor: (parent, name) ->
 			@children = []
 			super parent, name, DIRECTORY_ENTRY
+			@getDirectory      = @_getDirectoryAsync
+			@getFile           = @_getFileAsync
+			@removeRecursively = @_removeRecursivelyAsync
 		
 		_cloneChildrenRecursively: (clonedEntry) ->
 			for child in @children
@@ -670,164 +684,126 @@ if not window.requestFileSystem
 		createReader: () ->
 			return new jsDirectoryReader this
 		
-		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
-		getFile: (path, options, successCallback, errorCallback) ->
+		_getEntry: (path, createCallback, options) ->
+			options = options || {} #Make sure we always have options
 			
+			path = @foldPath path
+			path = path.split SEPERATOR
+				
+			if path[0] is ''
+				path.splice 0, 1
+				currentEntry = @filesystem.root
+			else
+				currentEntry = this
+				
+			for subpath in path
+				validateName subpath
+				
+			entry = jsDirectoryEntry.findEntry currentEntry, path
+			
+			if entry 
+				if options.create and options.exclusive
+					throw createExclusiveError()
+			else
+				if not options.create
+					throw createFileError window.FileError.NOT_FOUND_ERR, "Directory does not exist."
+				
+				name = path.pop()
+				parentEntry = jsDirectoryEntry.findEntry currentEntry, path
+				
+				if parentEntry
+					entry = createCallback parentEntry, name
+				else
+					throw createNoParentError()
+			
+			entry
+		
+		createFileFunc = (parent, name) ->
+				new jsFileEntry parent, name
+		
+		_getFileSync: (path, options) ->
+			entry = @_getEntry path, createFileFunc, options
+			
+			if not entry.isFile
+				code = window.FileError.TYPE_MISMATCH_ERR
+				message = "Trying to get directory as a file"
+				throw createFileError code, message
+			entry
+		
+		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
+		_getFileAsync: (path, options, successCallback, errorCallback) ->
 			if not path
 				throw new Error "getFile needs path argument"
-			obj = this
-			options = options || {} #Make sure we always have options
 			func = ->
-				path = obj.foldPath path
-				path = path.split SEPERATOR
-				
-				if path[0] is ''
-					path.splice 0, 1
-					currentEntry = obj.filesystem.root
-				else
-					currentEntry = obj
-				
-				for subpath in path
-					if not validateName errorCallback, subpath
-						return
-				
-				entry = jsDirectoryEntry.findEntry currentEntry, path
-				
-				if options.create
-					if entry is null
-						name = path.pop()
-				
-						if path.length is 0
-							entry = obj
-						else
-							entry = jsDirectoryEntry.findEntry currentEntry, path
-					
-						if entry
-							entry = new jsFileEntry entry, name
-						else
-							error = createNoParentError()
-							callEventLiberal errorCallback, error
-							return
-					else if options.exclusive
-						error = createExclusiveError()
-						callEventLiberal errorCallback, error
-						return
-				
-				if not (entry is null) and entry.isFile
-					callEventLiberal successCallback, entry
-					return
+				@_getFileSync path, options
+			@callAsync func, successCallback, errorCallback
+		
+		createDirectoryFunc = (parent, name) ->
+			new jsDirectoryEntry parent, name
+		
+		_getDirectorySync: (path, options) ->
+			entry = @_getEntry path, createDirectoryFunc, options
 			
-				if entry is null
-					code = window.FileError.NOT_FOUND_ERR
-					message = "File was not found"
-				else if entry.isDirectory
-					code = window.FileError.TYPE_MISMATCH_ERR
-					message = "Trying to get directory as a file"
-				else
-					code = window.FileError.ABORT_ERR
-					message = "Unkown error"
-				
-				error = createFileError code, message
-				callEventLiberal errorCallback, error
-			callLaterOn func
+			if not entry.isDirectory
+				code = window.FileError.TYPE_MISMATCH_ERR
+				message = "Trying to get file as directory"
+				throw createFileError code, message
+			entry
 		
 		# DOMString, optional Flags, optional EntryCallback, optional ErrorCallback
-		getDirectory: (path, options, successCallback, errorCallback) ->
-			
+		_getDirectoryAsync: (path, options, successCallback, errorCallback) ->
 			if not path
 				throw new Error "getDirectory needs path argument"
-			obj = this
-			options = options || {} #Make sure we always have options
 			func = ->
-				path = obj.foldPath path
-				path = path.split SEPERATOR
-				
-				if path[0] is ''
-					path.splice 0, 1
-					currentEntry = obj.filesystem.root
-				else
-					currentEntry = obj
-				
-				for subpath in path
-					if not validateName errorCallback, subpath
-						return
-				
-				entry = jsDirectoryEntry.findEntry currentEntry, path
-				
-				if entry 
-					if options.create and options.exclusive
-						error = createExclusiveError()
-						callEventLiberal errorCallback, error
-						return
-					else if entry.isFile
-						error = createFileError window.FileError.TYPE_MISMATCH_ERR, "Not a Directory but a File."
-						callEventLiberal errorCallback, error
-						return
-				else 
-					if not options.create
-						error = createFileError window.FileError.NOT_FOUND_ERR, "Directory does not exist."
-						callEventLiberal errorCallback, error
-						return
-					
-					name = path.pop()
-					entry = jsDirectoryEntry.findEntry currentEntry, path
-					
-					if entry
-						entry = new jsDirectoryEntry entry, name
-					else
-						error = createNoParentError()
-						callEventLiberal errorCallback, error
-						return
-				
-				callEventLiberal successCallback, entry
-			callLaterOn func
+				@_getDirectorySync path, options
+			@callAsync func, successCallback, errorCallback
 		
-		removeSync: (successCallback, errorCallback) ->
+		_removeSync: ->
 			# According to spec removing with children is not allowed
-			if this.children.length is 0
-				super successCallback, errorCallback
+			if @children.length is 0
+				super
 				return
-			callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Removing directory containing children not allowed."
-		removeRecursivelySync: (successCallback, errorCallback) ->
-			this.children.length = 0
-			this.removeSync successCallback, errorCallback
+			throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Removing directory containing children not allowed."
+		
+		_removeRecursivelySync: ->
+			@children.length = 0
+			@_removeSync()
 		
 		# VoidCallback, optional ErrorCallback
-		removeRecursively: (successCallback, errorCallback) ->
-			obj = this
+		_removeRecursivelyAsync: (successCallback, errorCallback) ->
 			func = ->
-				obj.removeRecursivelySync successCallback, errorCallback
-			callLaterOn func
+				@_removeRecursivelySync()
+			@callAsync func, successCallback, errorCallback
 			
 	class jsRootDirectoryEntry extends jsDirectoryEntry
 		constructor: (filesystem, path, name) ->
 			super filesystem, name
+			@_removeRecursivelySync = @_removeSync
 		
-		removeSync: (successCallback, errorCallback) ->
-			callEventLiberal errorCallback, createFileError window.FileError.INVALID_MODIFICATION_ERR, "Removing root directory not allowed."
+		_removeSync: (successCallback, errorCallback) ->
+			throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Removing root directory not allowed."
 		
-		removeRecursivelySync: (successCallback, errorCallback) ->
-			# Reuse error handling in removeSync
-			this.removeSync successCallback, errorCallback
-		
-	class jsDirectoryReader
+	class jsDirectoryReader extends jsBase
 		constructor: (dirEntry) ->
 			Object.defineProperty this, "dirEntry", {value : dirEntry }
+			@readEntries = @_readEntriesAsync
 		
 		@_allRead: false
 		
+		_readEntriesSync: ->
+			if @_allRead
+				return []
+			else
+				@_allRead = true;
+				# Return copy so we can be sure that children are not modified
+				# by invoker
+				return @dirEntry.children.slice 0
+		
 		# EntriesCallback, optional ErrorCallback 
-		readEntries: (successCallback, errorCallback) ->
-			obj = this
+		_readEntriesAsync: (successCallback, errorCallback) ->
 			func = ->
-				if obj._allRead
-					callEventLiberal successCallback, []
-				else
-					obj._allRead = true;
-					# Return copy so we can be sure that children are not modified
-					# by invoker
-					callEventLiberal successCallback, obj.dirEntry.children.slice 0
-			callLaterOn func
+				@_readEntriesSync()
+			@callAsync func, successCallback, errorCallback
 
 	class jsFileSystem
 		@_maxByteCount   = 0
@@ -873,11 +849,11 @@ if not window.requestFileSystem
 		@requestFileSystem: (type, size, successCallback, errorCallback) ->
 			if not (type is PERSISTENT or type is TEMPORARY)
 				throw new Error "Wrong type. <" + type + "> is not supported."
-			else if not size
+			if not size
 				throw new Error "requestFileSystem needs size argument."
-			else if not successCallback
+			if not successCallback
 				throw new Error "requestFileSystem needs successCallback argument."
-			else if window.indexedDB
+			if window.indexedDB
 				request = window.indexedDB.open "filesystem.js_"
 				request.onsuccess = ->
 					fs = createFilesystem type, size, new jsDatabaseDataStorage request.result
@@ -888,43 +864,42 @@ if not window.requestFileSystem
 					callEventLiberal errorCallback, error
 				
 			else if window.localStorage
-				fs = createFilesystem type, size, new jsLocalDataStorage window.localStorage
-				func = ->
+				callLaterOn ->
+					fs = createFilesystem type, size, new jsLocalDataStorage window.localStorage
 					callEventLiberal successCallback, fs
-				callLaterOn func
 			else
-				func = ->
+				callLaterOn ->
 					error = createFileError window.FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
 					callEventLiberal errorCallback, error
-				callLaterOn func
 		
 		failUrl = (errorCallback) ->
-			func = ->
+			callLaterOn ->
 				error = createFileError window.FileError.SYNTAX_ERR, "Could not interpret url."
 				callEventLiberal errorCallback, error
-			callLaterOn func
-			
+		
 		urlRegex = `/^filesystem:file:///(persistent|temporary)//`
 		@resolveLocalFileSystemURL: (url, successCallback, errorCallback) ->
 			if url is null or url is undefined
 				throw new Error "resolveLocalFileSystemURL needs a url argument."
 			
-			func = ->
+			callLaterOn ->
 				if not urlRegex.test url
 					return failUrl errorCallback
-			
+				
 				array = url.split ":///", 3
-			
+				
 				type = window.PERSISTENT
 				size = 100 # need function to get last size
-			
-				try
-					filesystem = jsLocalFileSystemSync.requestFileSystem type, size
-					entry = filesystem.root.getEntry
-					callEventLiberal successCallback, entry
-				catch e
-					callEventLiberal errorCallback, e
-			callLaterOn func
+				successFunc = (filesystem) ->
+					try
+						entry = filesystem.root.getEntry path
+						callEventLiberal successCallback, entry
+					catch e
+						callEventLiberal errorCallback, e
+				# There is no sync version of this since indexedDB cannot be accessed synced
+				# So we have to wait for second later execution
+				jsLocalFileSystemSync.requestFileSystem type, size, successFunc, errorCallback
+		
 
 	window.requestFileSystem = jsLocalFileSystem.requestFileSystem
 	window.resolveLocalFileSystemURL = jsLocalFileSystem.resolveLocalFileSystemURL
