@@ -151,7 +151,7 @@ if not window.requestFileSystem
 	callInvalidNameError = (errorCallback) ->
 		callEventLiberal errorCallback, createFileError window.FileError.SYNTAX_ERR, "Wrong characters in name"
 	
-	charRegex = `/([/\\]+| $)/`
+	charRegex = `/[/\\]+/`
 	# According to spec
 	#charRegex = new RegExp '([/\\<>:?*\"|]+|\\.$| $)'
 		
