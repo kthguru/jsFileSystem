@@ -872,11 +872,6 @@ if not window.requestFileSystem
 					error = createFileError window.FileError.ABORT_ERR, "IndexedDB and localStorage are not supported."
 					callEventLiberal errorCallback, error
 		
-		failUrl = (errorCallback) ->
-			callLaterOn ->
-				error = createFileError window.FileError.SYNTAX_ERR, "Could not interpret url."
-				callEventLiberal errorCallback, error
-		
 		urlRegex = `/^filesystem:file:///(persistent|temporary)//`
 		@resolveLocalFileSystemURL: (url, successCallback, errorCallback) ->
 			if url is null or url is undefined
@@ -884,7 +879,10 @@ if not window.requestFileSystem
 			
 			callLaterOn ->
 				if not urlRegex.test url
-					return failUrl errorCallback
+					callLaterOn ->
+						error = createFileError window.FileError.SYNTAX_ERR, "Could not interpret url."
+						callEventLiberal errorCallback, error
+					return
 				
 				array = url.split ":///", 3
 				
