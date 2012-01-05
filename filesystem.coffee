@@ -871,6 +871,26 @@ if not window.requestFileSystem
 				throw new Error "requestFileSystem needs size argument."
 			if not successCallback
 				throw new Error "requestFileSystem needs successCallback argument."
+			previous = null
+			for fs in filesystems
+				if fs._type is type
+					previous = fs
+					break
+			
+			if previous
+				if fs._maxByteCount < size
+					allowance = window.prompt "Page requests storing data up to " + size + " bytes.\nDo you want to allow?"
+					if allowance
+						fs._maxByteCount = size
+					else
+						callLaterOn ->
+							error = createFileError window.FileError.ABORT_ERR, "User disallowed request."
+							callEventLiberal errorCallback, error
+						return
+				# We have a previous filesystem to reuse
+				callLaterOn ->
+					callEventLiberal successCallback, previous
+				return
 			if window.indexedDB
 				request = window.indexedDB.open "filesystem.js_"
 				request.onsuccess = ->
