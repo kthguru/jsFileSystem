@@ -681,7 +681,7 @@ if not window.requestFileSystem
 		clone: (parent, name) ->
 			entry = new jsDirectoryEntry parent, name
 			super entry
-			this._cloneChildrenRecursively entry
+			@_cloneChildrenRecursively entry
 			entry
 		
 		slashReplaceRegex = `/[/]\.[/]/`           # -> /
@@ -692,7 +692,7 @@ if not window.requestFileSystem
 			path
 		
 		getChildren: (name_entry) ->
-			for child in this.children
+			for child in @children
 				if child.name is name_entry
 					return child
 			null
@@ -803,8 +803,7 @@ if not window.requestFileSystem
 			throw createFileError window.FileError.INVALID_MODIFICATION_ERR, "Removing root directory not allowed."
 		
 	class jsDirectoryReader extends jsBase
-		constructor: (dirEntry) ->
-			Object.defineProperty this, "dirEntry", {value : dirEntry }
+		constructor: (@dirEntry) ->
 			@readEntries = @_readEntriesAsync
 		
 		@_allRead: false
