@@ -716,6 +716,9 @@ if not window.requestFileSystem
 				else
 					throw createNoParentError()
 			
+			if entry is entry.filesystem.root
+				throw createFileError window.FileError.SECURITY_ERR, "Access to root not allowed"
+			
 			entry
 		
 		createFileFunc = (parent, name) ->
