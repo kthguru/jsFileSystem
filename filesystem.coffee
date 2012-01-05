@@ -879,6 +879,9 @@ if not window.requestFileSystem
 		@resolveLocalFileSystemURL: (url, successCallback, errorCallback) ->
 			if url is null or url is undefined
 				throw new Error "resolveLocalFileSystemURL needs a url argument."
+			if successCallback is null or successCallback is undefined
+				return # Handle like Chrome. Should rather throw an exception.
+				#throw new Error "resolveLocalFileSystemURL needs a successCallback argument."
 			
 			callLaterOn ->
 				if not urlRegex.test url
