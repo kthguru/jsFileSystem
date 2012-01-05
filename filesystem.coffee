@@ -664,15 +664,11 @@ if not window.requestFileSystem
 			this._cloneChildrenRecursively entry
 			entry
 		
+		slashReplaceRegex = `/[/]\.[/]/`           # -> /
+		deleteRegex       = `/^\.[/]|^\.$|[/]\.$/` # -> 
 		foldPath: (path) ->
-			# First simplify parsing
-			path = path.replace(SEPERATOR + '.' + SEPERATOR, SEPERATOR)
-			
-			# Clean up beginning ./
-			index = path.indexOf '.' + SEPERATOR
-			if index is 0
-				path = path.slice 2
-			
+			path = path.replace slashReplaceRegex, SEPERATOR
+			path = path.replace deleteRegex, ''
 			path
 		
 		getChildren: (name_entry) ->
