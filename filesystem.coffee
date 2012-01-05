@@ -1,11 +1,13 @@
 `"use strict";`
 # Hook up FileSystem API
 
-window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem
-window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder
+requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem
 
-if not window.requestFileSystem
+if not requestFileSystem
 	# No native support
+	
+	indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDBs
+	BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder
 	
 	class jsFileException extends Error
 		@base_exception: undefined
@@ -650,7 +652,7 @@ if not window.requestFileSystem
 			@callAsync func, successCallback, errorCallback
 		
 		_fileSync: ->
-			builder = new window.BlobBuilder
+			builder = new BlobBuilder
 			new jsFile this, builder
 		
 		# FileCallback, optional ErrorCallback
