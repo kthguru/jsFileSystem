@@ -198,25 +198,38 @@ if not window.requestFileSystem
 				parent     = this
 			else
 				filesystem = parent.filesystem
-			@_parent = parent
-			@_name   = name
+			
+			fullpath = null
+			Object.defineProperty this, "_parent",
+				get: ->
+					parent
+				set: (value) ->
+					parent = value
+					fullpath = null # Force recalculation of path
+			Object.defineProperty this, "_name",
+				get: ->
+					name
+				set: (value) ->
+					name = value
+					fullpath = null
 			Object.defineProperty this, "parent"    , { get: -> @_parent }
 			Object.defineProperty this, "filesystem", { value : filesystem }
 			Object.defineProperty this, "name"      , { get: -> @_name }
-			
-			#TODO: Move isRoot handling off - it's ugly design
-			isRoot = @parent is this
-			if isRoot
-				fullpath = SEPERATOR
-			else if parent.name is ''
-				fullpath = parent.fullPath
-			else
-				fullpath = parent.fullPath + SEPERATOR
-			
-			fullpath += @name
-			
-			Object.defineProperty this, "fullPath", { value : fullpath }
-			
+			Object.defineProperty this, "fullPath"   ,
+				get: ->
+					if fullpath
+						return fullpath
+				
+					isRoot = @parent is this
+					if isRoot
+						fullpath = SEPERATOR
+					else if parent.name is ''
+						fullpath = parent.fullPath
+					else
+						fullpath = parent.fullPath + SEPERATOR
+				
+					fullpath += @name
+					fullpath
 			Object.defineProperty this, "isFile"     , { value : typeFlag is FILE_ENTRY }
 			Object.defineProperty this, "isDirectory", { value : typeFlag is DIRECTORY_ENTRY }
 			
@@ -224,6 +237,8 @@ if not window.requestFileSystem
 			
 			filesystem.reserveBytes this
 			
+			#TODO: Move isRoot handling off - it's ugly design
+			isRoot = @parent is this
 			if not isRoot
 				@parent.children.push this
 			
