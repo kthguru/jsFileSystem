@@ -263,6 +263,8 @@ if not window.requestFileSystem
 		
 		# MetadataCallback, optional ErrorCallback
 		_getMetadataAsync: (successCallback, errorCallback) ->
+			if not successCallback
+				throw new Error "getMetadata needs a successCallback argument."
 			func = ->
 				@_getMetadataSync()
 			@callAsync func, successCallback, errorCallback
@@ -374,6 +376,9 @@ if not window.requestFileSystem
 		
 		# VoidCallback, optional ErrorCallback
 		_removeAsync: (successCallback, errorCallback) ->
+			if not successCallback
+				throw new Error "remove needs a successCallback argument"
+			
 			func = ->
 				@_removeSync()
 			@callAsync func, successCallback, errorCallback
