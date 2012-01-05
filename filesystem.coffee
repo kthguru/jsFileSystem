@@ -892,7 +892,7 @@ if not window.requestFileSystem
 					callEventLiberal successCallback, previous
 				return
 			if window.indexedDB
-				request = window.indexedDB.open "filesystem.js_"
+				request = window.indexedDB.open "_filesystem.js_"
 				request.onsuccess = ->
 					fs = createFilesystem type, size, new jsDatabaseDataStorage request.result
 					callEventLiberal successCallback, fs
