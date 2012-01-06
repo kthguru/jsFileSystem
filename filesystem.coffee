@@ -6,7 +6,7 @@ requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem
 if not requestFileSystem
 	# No native support
 	
-	indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDBs
+	indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB
 	BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder
 	
 	class jsFileException extends Error
